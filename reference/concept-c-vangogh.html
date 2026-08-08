@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Gallery — Van Gogh · Tile Mosaic</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#070a18}
+  body{font-family:"Inter","Helvetica Neue",Arial,sans-serif;color:#f6f3e8;cursor:crosshair}
+  .mono{font-family:"SFMono-Regular","Consolas",monospace}
+  canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+
+  .scrim{position:fixed;inset:0;pointer-events:none;
+    background:linear-gradient(90deg,transparent 24%,rgba(7,10,24,.34) 54%,rgba(5,7,18,.9) 100%)}
+  .grain{position:fixed;inset:0;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+    background:repeating-linear-gradient(0deg,#000 0 1px,transparent 1px 3px)}
+
+  .ui{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between;padding:32px 48px;pointer-events:none}
+  .ui>*{pointer-events:auto}
+  .bar{display:flex;justify-content:space-between;align-items:center}
+  .brand{font-size:13px;letter-spacing:.3em;text-transform:uppercase;font-weight:800}
+  .brand b{color:#f2c14e}
+  .live{display:flex;align-items:center;gap:9px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#9aa0c0}
+  .live .d{width:7px;height:7px;background:#f2c14e;box-shadow:0 0 12px #f2c14e;animation:bl 1.4s steps(2) infinite}
+  @keyframes bl{50%{opacity:.25}}
+
+  .panel{align-self:flex-end;max-width:500px;margin-left:auto;text-align:right}
+  .fade{transition:opacity .5s ease, transform .5s ease}
+  .fade.out{opacity:0;transform:translateX(18px)}
+
+  .essence{display:inline-flex;align-items:center;gap:10px;border:1px solid rgba(242,193,78,.4);
+    background:rgba(18,16,30,.5);backdrop-filter:blur(8px);border-radius:999px;
+    padding:8px 16px;margin-bottom:20px}
+  .essence .ic{width:8px;height:8px;border-radius:50%;background:#f2c14e;box-shadow:0 0 10px #f2c14e}
+  .essence .t{font-size:11px;letter-spacing:.12em}
+  .essence .t b{color:#f2c14e;font-weight:600}
+  .essence .t span{color:#9aa0c0}
+
+  .kicker{font-size:10px;letter-spacing:.32em;text-transform:uppercase;color:#9aa0c0;margin-bottom:12px}
+  h1{font-size:54px;font-weight:800;line-height:1.04;letter-spacing:-.03em;
+     text-shadow:0 2px 30px rgba(0,0,0,.7),0 0 24px rgba(242,193,78,.18)}
+  .essenceline{margin-top:18px;font-size:14px;font-style:italic;color:#e7e2cf;line-height:1.6;max-width:460px;margin-left:auto}
+  .meta{margin-top:18px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#9aa0c0;line-height:2}
+  .meta b{color:#f6f3e8}
+  .actions{margin-top:22px;display:flex;gap:10px;justify-content:flex-end}
+  .btn{border:1px solid rgba(246,243,232,.22);background:rgba(18,16,30,.4);backdrop-filter:blur(8px);color:#f6f3e8;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:11px 18px;border-radius:8px;cursor:pointer}
+  .btn:hover{border-color:#f2c14e;color:#f2c14e;box-shadow:0 0 18px -6px #f2c14e}
+
+  .foot{display:flex;justify-content:space-between;align-items:flex-end;gap:24px}
+  .compose{display:flex;align-items:center;gap:14px;border:1px solid rgba(246,243,232,.2);border-radius:10px;padding:12px 16px;background:rgba(18,16,30,.42);backdrop-filter:blur(8px);width:min(480px,46vw)}
+  .compose span{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#f2c14e;white-space:nowrap}
+  .compose input{flex:1;background:transparent;border:0;color:#f6f3e8;font-size:16px;outline:none}
+  .compose input::placeholder{color:#7a7a98}
+  .nav{display:flex;align-items:center;gap:16px}
+  .dots{display:flex;gap:7px;max-width:200px;flex-wrap:wrap;justify-content:flex-end}
+  .dots i{width:16px;height:6px;border-radius:2px;background:rgba(246,243,232,.22);cursor:pointer;transition:.3s}
+  .dots i.on{background:#f2c14e;box-shadow:0 0 12px -2px #f2c14e}
+  .arrow{width:42px;height:42px;border:1px solid rgba(246,243,232,.22);border-radius:8px;background:rgba(18,16,30,.4);backdrop-filter:blur(8px);color:#f6f3e8;cursor:pointer;font-size:16px}
+  .arrow:hover{border-color:#f2c14e;color:#f2c14e}
+  .note{position:fixed;left:48px;bottom:86px;font-size:11px;letter-spacing:.08em;color:#f2c14e;opacity:.75;pointer-events:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="grain"></div>
+<div class="scrim"></div>
+
+<div class="ui">
+  <div class="bar">
+    <div class="brand">TEXT<b>::</b>GALLERY</div>
+    <div class="live"><span class="d"></span>Mosaic Engine · Van Gogh Essence</div>
+  </div>
+
+  <div class="panel">
+    <div class="fade" id="fade">
+      <div class="essence"><span class="ic"></span><span class="t mono">after the essence of&nbsp; <b>빈센트 반 고흐</b> <span id="aMove">· 후기 인상주의</span></span></div>
+      <div class="kicker mono" id="kicker">// generating</div>
+      <h1 id="title">별이 빛나는 밤에</h1>
+      <div class="essenceline" id="essenceLine">소용돌이치는 밤하늘, 임파스토로 휘몰아치는 별빛의 결</div>
+      <div class="meta mono" id="meta">anon · 2026 · <b>1853–1890</b> · seed#5a7e · ♥ 2480</div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="likeBtn">♥ <span id="likeN">2480</span></button>
+      <button class="btn">SHARE</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="compose"><span class="mono">&gt; new</span><input id="inp" placeholder="문장을 입력하면 반 고흐의 결로 타일이 짜입니다…"></div>
+    <div class="nav"><div class="dots" id="dots"></div><button class="arrow" id="prev">‹</button><button class="arrow" id="next">›</button></div>
+  </div>
+</div>
+<div class="note mono">// 마우스를 올리면 붓터치 셀이 반응합니다 · 별이 빛나는 밤에 ↔ 해바라기</div>
+
+<script>
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+function resize(){cv.width=innerWidth;cv.height=innerHeight;}
+addEventListener('resize',resize);resize();
+
+const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const frac=x=>x-Math.floor(x);
+function smooth(e0,e1,x){x=clamp((x-e0)/(e1-e0),0,1);return x*x*(3-2*x);}
+function hash(a,b){return frac(Math.sin(a*12.9898+b*78.233+9.17)*43758.5453);}
+
+// ============================================================
+//  Each work is a SCENE painted procedurally, then quantized
+//  into tiles — so the composition (form) is actually visible.
+//  scene(nx,ny,PT,ar) -> [r,g,b]   (nx,ny in 0..1)
+// ============================================================
+
+// ---- 별이 빛나는 밤에 (The Starry Night, 1889) ----
+const STARS=[[0.16,0.16],[0.29,0.10],[0.40,0.20],[0.52,0.13],[0.61,0.27],
+             [0.72,0.16],[0.90,0.34],[0.10,0.36],[0.25,0.43],[0.55,0.36],[0.95,0.13]];
+function swirlV(cx,cy,nx,ny,sc,PT,arms,ar){
+  const dx=(nx-cx)*ar, dy=ny-cy, ang=Math.atan2(dy,dx), rad=Math.hypot(dx,dy);
+  return Math.sin(ang*arms - rad*sc + PT*1.1) * Math.exp(-rad*1.6);
+}
+function sceneStarry(nx,ny,PT,ar){
+  // base night sky — deep indigo, a touch lighter up high
+  let r=14+ny*6, g=22+ny*8, b=58+(1-ny)*36;
+  // two great swirls of the sky
+  const s1=swirlV(0.40,0.32,nx,ny,16,PT,2,ar);
+  const s2=swirlV(0.66,0.28,nx,ny,20,PT,2,ar);
+  let sw=Math.max(s1,s2*0.85);
+  const skyMask=smooth(0.78,0.30,ny);                  // fade swirls toward the ground
+  let light=smooth(0.05,0.9,sw)*skyMask;
+  r=lerp(r,150,light*0.75); g=lerp(g,182,light*0.75); b=lerp(b,228,light*0.75);
+  // gentle cobalt current filling the rest of the sky
+  let flow=0.5+0.5*Math.sin(nx*7+ny*4+PT*0.8);
+  r=lerp(r,60,flow*skyMask*0.25); g=lerp(g,95,flow*skyMask*0.25); b=lerp(b,170,flow*skyMask*0.25);
+  // moon — glowing crescent, top right
+  const dm=Math.hypot((nx-0.84)*ar,(ny-0.16));
+  const moon=smooth(0.115,0.02,dm), halo=smooth(0.20,0.04,dm);
+  r=lerp(r,252,moon); g=lerp(g,232,moon); b=lerp(b,150,moon);
+  r+=halo*100; g+=halo*88; b+=halo*30;
+  // stars — radiant yellow-white halos
+  for(let i=0;i<STARS.length;i++){
+    const tw=0.78+0.22*Math.sin(PT*2+i*1.7);
+    const ds=Math.hypot((nx-STARS[i][0])*ar,(ny-STARS[i][1]));
+    const core=smooth(0.018,0,ds), gl=smooth(0.055,0.012,ds)*tw;
+    r=lerp(r,255,core); g=lerp(g,238,core); b=lerp(b,150,core);
+    r+=gl*90; g+=gl*78; b+=gl*26;
+  }
+  // ground — rolling dark blue hills
+  const horizon=0.74+0.02*Math.sin(nx*9+0.6);
+  if(ny>horizon){
+    const tg=(ny-horizon)/(1-horizon);
+    r=18+tg*8+6*Math.sin(nx*22+ny*6); g=42+tg*16; b=46+tg*8;
+    // village windows glimmering along the foot of the hills
+    if(ny>horizon+0.02 && ny<horizon+0.11){
+      const wx=frac(nx*16);
+      if(wx<0.18 && hash((nx*16)|0,3)>0.45){ r+=170; g+=120; b+=30; }
+    }
+  }
+  // church spire near village center
+  const spx=0.46, spireW=0.012+(0.80-ny)*0.04;
+  if(ny>0.62 && ny<0.80 && Math.abs(nx-spx)<spireW){ r=22;g=34;b=40; }
+  // cypress — dark flame in the left foreground, swaying
+  const cxp=0.135+0.025*Math.sin(ny*5+PT*0.4);
+  const cw=0.075*(1.05-ny*0.45);
+  const cd=Math.abs(nx-cxp);
+  if(cd<cw){
+    const e=smooth(cw,cw*0.55,cd);
+    const flame=0.5+0.5*Math.sin(ny*40+PT*1.2+nx*30);
+    r=lerp(r,12+flame*22,e); g=lerp(g,26+flame*20,e); b=lerp(b,18+flame*10,e);
+  }
+  return [r,g,b];
+}
+
+// ---- 해바라기 (Sunflowers, 1888) ----
+const FLOWERS=[ // cx, cy, radius, wilt(0..1)
+  [0.50,0.18,0.115,0.0],[0.33,0.25,0.10,0.35],[0.67,0.25,0.10,0.2],
+  [0.235,0.39,0.085,0.6],[0.45,0.345,0.10,0.0],[0.585,0.37,0.092,0.15],
+  [0.755,0.42,0.082,0.5],[0.355,0.49,0.082,0.45],[0.535,0.50,0.088,0.7],
+  [0.665,0.52,0.075,0.3],[0.29,0.155,0.072,0.5]
+];
+function sceneSun(nx,ny,PT,ar){
+  // background: pale yellow-green wall over an ochre table
+  const horizon=0.66;
+  let r,g,b;
+  if(ny<horizon){ r=196+10*Math.sin(nx*6+ny*4); g=204; b=120; }
+  else          { r=192; g=150; b=58; }
+  // table edge line
+  if(Math.abs(ny-horizon)<0.006){ r=150;g=110;b=40; }
+  // ---- vase, center ----
+  const vx=0.5, vtop=0.60, vbot=0.92, mid=0.74;
+  if(ny>vtop && ny<vbot){
+    const tt=(ny-vtop)/(vbot-vtop);
+    const half=0.075+0.075*Math.sin(tt*Math.PI*0.92+0.16); // belly bulge
+    if(Math.abs(nx-vx)<half){
+      if(ny<mid){ r=236;g=206;b=92; } else { r=198;g=150;b=44; }
+      if(Math.abs(ny-mid)<0.006){ r=150;g=108;b=36; }        // two-tone divider
+      if(Math.abs(ny-(vtop+0.01))<0.012){ r=224;g=176;b=70; } // rim
+      const sh=smooth(half*0.4,half,Math.abs(nx-vx));          // round shading
+      r-=sh*45; g-=sh*45; b-=sh*20;
+    }
+  }
+  // ---- sunflower heads ----
+  for(let i=0;i<FLOWERS.length;i++){
+    const F=FLOWERS[i], dx=(nx-F[0])*ar, dy=ny-F[1];
+    const dd=Math.hypot(dx,dy), ang=Math.atan2(dy,dx);
+    const petal=F[2]*(0.80+0.20*Math.abs(Math.sin(ang*13+i)));
+    if(dd<petal){
+      const wilt=F[3];
+      if(dd<F[2]*0.46){                       // seed disc
+        const sp=hash((nx*90)|0,(ny*90)|0);
+        r=66+sp*40; g=44+sp*26; b=18+sp*12;
+      }else{                                   // petals — chrome yellow, wilt→amber
+        const pr=smooth(petal,F[2]*0.46,dd);   // brighter near tips
+        r=232+pr*20; g=192-wilt*70+pr*10; b=34+wilt*8;
+        const ridge=0.5+0.5*Math.sin(ang*13+i);
+        r-=ridge*22; g-=ridge*30;              // petal separation
+      }
+    }
+  }
+  // a few stems sinking into the vase
+  for(let i=0;i<3;i++){
+    const sxp=0.42+i*0.08, dd=Math.abs(nx-sxp);
+    if(ny>0.5 && ny<0.62 && dd<0.006){ r=120;g=120;b=40; }
+  }
+  return [r,g,b];
+}
+
+// ===== works =====
+const works=[
+  {t:'별이 빛나는 밤에', sub:'The Starry Night · 1889',
+   essKo:'소용돌이치는 밤하늘, 임파스토로 휘몰아치는 별빛의 결',
+   likes:2480, seedHex:'5a7e', cell:15, scene:sceneStarry},
+  {t:'해바라기', sub:'Sunflowers · 1888',
+   essKo:'황토와 크롬 옐로의 두터운 임파스토, 화병에 응축된 태양',
+   likes:1893, seedHex:'c1f3', cell:15, scene:sceneSun}
+];
+let idx=0;
+
+// scene crossfade state
+let curScene=works[0].scene, prevScene=works[0].scene, mixT=1, cell=works[0].cell, Tcell=cell;
+const mouse={x:-999,y:-999};
+addEventListener('mousemove',e=>{mouse.x=e.clientX;mouse.y=e.clientY});
+addEventListener('mouseleave',()=>{mouse.x=mouse.y=-999});
+
+let t=0;
+function frame(){
+  t+=16;
+  const PT=t*0.001;
+  if(mixT<1) mixT=Math.min(1,mixT+0.045);
+  cell=lerp(cell,Tcell,.1);
+  const W=innerWidth,H=innerHeight,ar=W/H,cs=cell;
+  const cols=Math.ceil(W/cs)+1, rows=Math.ceil(H/cs)+1, gap=cs>22?2:1;
+  const m=smooth(0,1,mixT);
+  ctx.fillStyle='#070a18';ctx.fillRect(0,0,W,H);
+  for(let r=0;r<rows;r++){
+    for(let cI=0;cI<cols;cI++){
+      const nx=(cI+0.5)*cs/W, ny=(r+0.5)*cs/H;
+      // crossfade between the outgoing and incoming scene
+      let c;
+      if(m>=1){ c=curScene(nx,ny,PT,ar); }
+      else{
+        const a=prevScene(nx,ny,PT,ar), bC=curScene(nx,ny,PT,ar);
+        c=[lerp(a[0],bC[0],m),lerp(a[1],bC[1],m),lerp(a[2],bC[2],m)];
+      }
+      let rr=c[0],gg=c[1],bb=c[2];
+      // impasto: per-cell brush value + bloom on bright cells
+      const lum=(rr*0.3+gg*0.6+bb*0.1)/255;
+      const brush=1+(hash(cI,r)-0.5)*0.16;
+      let bright=brush*(1+0.5*smooth(0.62,1.0,lum));
+      bright*=1+0.04*Math.sin(PT*5+cI+r);
+      // mouse stirs the paint
+      const px=cI*cs+cs/2, py=r*cs+cs/2, dx=px-mouse.x, dy=py-mouse.y, d=Math.hypot(dx,dy);
+      if(d<200){ const w=Math.sin(d*0.05-PT*12); bright+=(1-d/200)*0.7*w+(1-d/200)*0.3; }
+      rr=clamp(rr*bright,0,255); gg=clamp(gg*bright,0,255); bb=clamp(bb*bright,0,255);
+      // brush-stroke jitter on the tile position
+      const jx=(hash(cI,r+7)-0.5)*cs*0.18, jy=(hash(cI+3,r)-0.5)*cs*0.18;
+      ctx.fillStyle=`rgb(${rr|0},${gg|0},${bb|0})`;
+      ctx.fillRect(cI*cs+jx, r*cs+jy, cs-gap, cs-gap);
+    }
+  }
+  requestAnimationFrame(frame);
+}
+frame();
+
+// ===== UI =====
+const fade=document.getElementById('fade'),titleEl=document.getElementById('title'),
+metaEl=document.getElementById('meta'),kickEl=document.getElementById('kicker'),
+likeN=document.getElementById('likeN'),dotsEl=document.getElementById('dots'),
+essLine=document.getElementById('essenceLine');
+const ERA='1853–1890';
+function buildDots(){dotsEl.innerHTML='';works.forEach((_,i)=>{const d=document.createElement('i');d.onclick=()=>go(i);dotsEl.appendChild(d);});}
+buildDots();
+function render(){
+  const w=works[idx];
+  titleEl.textContent=w.t;
+  essLine.textContent='“'+w.essKo+'”';
+  kickEl.textContent='// generating · '+(w.sub||'Vincent van Gogh');
+  metaEl.innerHTML=`anon · 2026 · <b>${ERA}</b> · seed#${w.seedHex} · ♥ ${w.likes.toLocaleString()}`;
+  likeN.textContent=w.likes.toLocaleString();
+  [...dotsEl.children].forEach((d,i)=>d.classList.toggle('on',i===idx));
+}
+function go(i){
+  idx=(i+works.length)%works.length;
+  const w=works[idx];
+  fade.classList.add('out');
+  prevScene=curScene; curScene=w.scene; mixT=0; Tcell=w.cell;
+  setTimeout(()=>{render();fade.classList.remove('out');},420);
+}
+document.getElementById('next').onclick=()=>go(idx+1);
+document.getElementById('prev').onclick=()=>go(idx-1);
+document.getElementById('likeBtn').onclick=()=>{works[idx].likes++;render();};
+go(0);
+let auto=setInterval(()=>go(idx+1),7000);
+['mousedown','keydown'].forEach(e=>addEventListener(e,()=>{clearInterval(auto);auto=setInterval(()=>go(idx+1),7000);}));
+
+// compose: typed text → deterministically maps to one of the two works
+function hashStr(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+const inp=document.getElementById('inp');
+inp.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&inp.value.trim()){
+    const txt=inp.value.trim(), h=hashStr(txt), base=works[h%2];
+    works.push({...base,t:txt,likes:0,seedHex:(h%65536).toString(16).padStart(4,'0')});
+    buildDots(); inp.value=''; go(works.length-1);
+  }
+});
+</script>
+</body>
+</html>

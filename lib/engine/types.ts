@@ -1,0 +1,28 @@
+export type RGB = [number, number, number];
+
+/**
+ * 절차적 페인팅 함수. 화면을 0..1 정규 좌표로 보고
+ * (nx, ny) 지점의 색을 돌려준다. t는 초 단위 시간, ar은 가로/세로 비율.
+ * 매 프레임 셀 수만큼 호출되므로 내부 연산은 가볍게 유지할 것.
+ */
+export type Scene = (nx: number, ny: number, t: number, ar: number) => RGB;
+
+/**
+ * 붓터치 방향장. (nx, ny) 지점에서 붓이 흐르는 각도(라디안)를 돌려준다.
+ * 스트로크는 180° 대칭이므로 방향의 부호는 무시된다.
+ */
+export type FlowFn = (nx: number, ny: number, t: number, ar: number) => number;
+
+export interface Work {
+  title: string;
+  sub?: string;
+  /** 작품 패널에 표시되는 한 줄 에센스 */
+  essence: string;
+  likes: number;
+  seedHex: string;
+  /** 타일 한 변의 CSS 픽셀 크기 */
+  cell: number;
+  scene: Scene;
+  /** 붓터치 방향장 — 없으면 완만한 기본 흐름을 쓴다 */
+  flow?: FlowFn;
+}
