@@ -26,12 +26,20 @@ canvas.mosaic {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent 30%,
-    rgba(7, 10, 24, 0.2) 58%,
-    rgba(5, 7, 18, 0.55) 100%
-  );
+  /* UI가 놓이는 모서리(좌상단 로고·우측 패널·우하단 네비)만 눌러
+     밝은 작품에서도 글자가 읽히게 한다 — 화면 중앙 그림은 건드리지 않는다 */
+  background:
+    radial-gradient(
+      ellipse 460px 240px at 0% 0%,
+      rgba(7, 10, 24, 0.78),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 820px 620px at 100% 62%,
+      rgba(5, 7, 18, 0.72),
+      transparent 74%
+    ),
+    linear-gradient(90deg, transparent 48%, rgba(5, 7, 18, 0.34) 100%);
 }
 .grain {
   position: fixed;
@@ -53,6 +61,29 @@ canvas.mosaic {
 }
 .ui > * {
   pointer-events: auto;
+}
+
+.brand {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.brand-mark {
+  display: block;
+  border-radius: 7px;
+  box-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+.brand-word {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  color: #f6f3e8;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85);
+}
+.brand-word b {
+  color: #f2c14e;
+  font-weight: 800;
 }
 
 .panel {

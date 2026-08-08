@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Logo from "./Logo";
 import MosaicCanvas from "./MosaicCanvas";
 import { ARTIST, MODEL, baseWorks } from "@/lib/scenes";
 
@@ -65,7 +66,7 @@ export default function Gallery() {
       <div className="scrim" />
 
       <div className="ui">
-        <div />
+        <Logo />
         <div className="panel">
           <div className={`fade${fading ? " out" : ""}`}>
             <div className="kicker">{baseWorks[shownIdx].sub}</div>

@@ -134,6 +134,16 @@ compose 입력 자체가 제거되어 이 단계는 취소 (2026-08-08).
   (generated with Claude Fable 5 · claude-fable-5).
 - Work 타입에 sub/desc 복원, ARTIST·MODEL 상수는 lib/scenes/index.ts.
 
+## 로고·파비콘·문서 (2026-08-09)
+
+- 소용돌이 붓결 마크 + IMPASTILE 워드마크를 좌상단에 추가 (`components/Logo.tsx`),
+  동일 마크를 `app/icon.svg`로 파비콘 등록 (App Router 자동 인식).
+- 스크림을 코너 앵커 방식으로 교체 — UI가 놓인 좌상단·우측만 눌러 밝은 작품에서도
+  글자가 읽히게 하고 화면 중앙 그림은 건드리지 않는다.
+- `MosaicCanvas`가 재마운트 시 최초 작품이 아닌 현재 작품으로 렌더러를 초기화하도록 보강
+  (개발 중 Fast Refresh에서 캔버스·제목이 어긋나 보이던 문제).
+- README.md 전면 재작성, CLAUDE.md에 프로젝트 가이드 작성.
+
 ## 리스크 / 참고
 
 - 씬 함수는 매 프레임 셀 수만큼 호출됨(약 1만 회/프레임) — 씬을 추가할수록 함수 내부 연산을 가볍게 유지해야 함.
