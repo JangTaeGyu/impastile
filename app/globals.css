@@ -79,6 +79,36 @@ h1 {
     0 2px 30px rgba(0, 0, 0, 0.7),
     0 0 24px rgba(242, 193, 78, 0.18);
 }
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #f2c14e;
+  margin-bottom: 12px;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+}
+.desc {
+  margin-top: 16px;
+  font-size: 14px;
+  font-style: italic;
+  color: #e7e2cf;
+  line-height: 1.6;
+  max-width: 480px;
+  margin-left: auto;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.8);
+}
+.meta {
+  margin-top: 16px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #9aa0c0;
+  line-height: 2;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.8);
+}
+.meta b {
+  color: #f6f3e8;
+  font-weight: 600;
+}
 
 .foot {
   display: flex;

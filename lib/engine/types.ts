@@ -15,6 +15,10 @@ export type FlowFn = (nx: number, ny: number, t: number, ar: number) => number;
 
 export interface Work {
   title: string;
+  /** 원제 · 연도 · 소장처 */
+  sub: string;
+  /** 작품 한 줄 설명 */
+  desc: string;
   /** 타일 한 변의 CSS 픽셀 크기 */
   cell: number;
   scene: Scene;
