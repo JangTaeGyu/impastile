@@ -31,9 +31,9 @@ canvas.mosaic {
   pointer-events: none;
   background: linear-gradient(
     90deg,
-    transparent 24%,
-    rgba(7, 10, 24, 0.34) 54%,
-    rgba(5, 7, 18, 0.9) 100%
+    transparent 30%,
+    rgba(7, 10, 24, 0.2) 58%,
+    rgba(5, 7, 18, 0.55) 100%
   );
 }
 .grain {
