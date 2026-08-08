@@ -15,11 +15,6 @@ export type FlowFn = (nx: number, ny: number, t: number, ar: number) => number;
 
 export interface Work {
   title: string;
-  sub?: string;
-  /** 작품 패널에 표시되는 한 줄 에센스 */
-  essence: string;
-  likes: number;
-  seedHex: string;
   /** 타일 한 변의 CSS 픽셀 크기 */
   cell: number;
   scene: Scene;
