@@ -6,7 +6,7 @@ const MIX_RATE = 2.7; // 크로스페이드 속도 (1/s) — 완료까지 약 0.
 const MAX_DT = 0.25; // 스로틀·탭 복귀 시 시간 점프 상한 (s)
 
 // 방향장이 없는 씬의 기본 흐름 — 완만하게 굽이치는 수평 붓결
-const DEFAULT_FLOW: FlowFn = (nx, ny) =>
+export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
   0.35 * Math.sin(nx * 5 + ny * 3) + 0.2 * Math.sin(ny * 9 - nx * 4);
 
 /**

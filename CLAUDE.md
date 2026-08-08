@@ -30,6 +30,9 @@ npm run lint     # ESLint
 
 - **`<작품>Data.ts`는 자동 생성 파일이다.** 직접 편집하지 말고
   `scripts/extract-painting.py`를 다시 돌린다 (pillow·numpy 필요, venv 권장).
+- **`assets/og/*.woff`도 자동 생성이다.** OG 카드 문구는 `lib/ogCopy.json`에만 두고,
+  고친 뒤 `node scripts/fetch-og-font.mjs`로 서브셋을 다시 굽는다. 이걸 빠뜨리면
+  새 글자가 카드에서 두부(□)로 나온다. next/og 기본 폰트에는 한글이 없다.
 - **시간은 dt 기반으로 다룬다.** `t += 16` 같은 프레임 수 누적은 rAF 스로틀링과
   120Hz에서 속도가 달라진다. `renderer.ts`의 `frame(now)`이 기준.
 - **방향 보간은 배각(2θ) 벡터로 한다.** 각도를 직접 lerp하면 스트로크가 뒤집힌다.

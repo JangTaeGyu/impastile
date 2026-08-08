@@ -22,6 +22,15 @@ npm run build    # 프로덕션 빌드
 npm run lint     # ESLint
 ```
 
+OG 태그의 절대 URL 기준은 `NEXT_PUBLIC_SITE_URL`로 준다 (Vercel에서는 자동).
+미설정 시 `http://localhost:3000`으로 떨어진다.
+
+공유 카드 문구(`lib/ogCopy.json`)를 고쳤다면 한글 폰트 서브셋을 다시 굽는다.
+
+```bash
+node scripts/fetch-og-font.mjs   # → assets/og/*.woff (커밋 대상)
+```
+
 ## 작동 원리
 
 ### 1. 원화에서 데이터 추출 (빌드 전, 1회)
@@ -60,10 +69,12 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 
 ```
 app/
-  layout.tsx          메타데이터, 폰트
+  layout.tsx          메타데이터(OG/트위터 카드 포함), 폰트
   page.tsx            갤러리 페이지 (서버 컴포넌트 셸)
+  opengraph-image.tsx 공유 카드 이미지 (빌드 시 1회 생성)
   icon.svg            파비콘
   globals.css         전역 스타일
+assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
 components/
   Gallery.tsx         작품 전환 상태, 정보 패널, 네비게이션
   MosaicCanvas.tsx    캔버스 + rAF 루프 수명 관리
@@ -73,13 +84,16 @@ lib/
     types.ts          Scene, FlowFn, Work
     math.ts           lerp, clamp, smooth, hash
     renderer.ts       프레임 루프, 스트로크 렌더링, 크로스페이드
+    mosaicSvg.ts      같은 규칙으로 한 프레임을 SVG로 굽기 (서버·OG용)
   scenes/
     painting.ts       원화 데이터 디코드 + 샘플링 씬/방향장 생성
     <작품>Data.ts     자동 생성 데이터 (색상 맵 + 방향장)
     <작품>.ts         3줄 래퍼
     index.ts          baseWorks 레지스트리, 작가·모델 정보
+  ogCopy.json         OG 카드 문구 (폰트 서브셋의 입력이기도 하다)
 scripts/
   extract-painting.py 원화 → 데이터 모듈 변환기
+  fetch-og-font.mjs   OG 카드 문구 → 한글 폰트 서브셋
 ```
 
 새 작품을 추가하는 자세한 절차는 [`lib/scenes/README.md`](lib/scenes/README.md) 참고.
