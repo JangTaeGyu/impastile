@@ -22,8 +22,8 @@ npm run build    # 프로덕션 빌드
 npm run lint     # ESLint
 ```
 
-OG 태그의 절대 URL 기준은 `NEXT_PUBLIC_SITE_URL`로 준다 (Vercel에서는 자동).
-미설정 시 `http://localhost:3000`으로 떨어진다.
+배포처는 <https://impastile.jubrolab.dev>. OG 태그의 절대 URL 기준도 이 주소이며,
+프리뷰·로컬에서 다른 주소를 쓰려면 `NEXT_PUBLIC_SITE_URL`로 덮는다.
 
 공유 카드 문구(`lib/ogCopy.json`)를 고쳤다면 한글 폰트 서브셋을 다시 굽는다.
 
@@ -111,5 +111,12 @@ Next.js (App Router) · TypeScript · Canvas 2D. 런타임 의존성은 React/Ne
 
 ## 라이선스 / 출처
 
-원화 이미지는 Wikimedia Commons의 퍼블릭 도메인 스캔을 사용했다
-(반 고흐 사후 70년 경과). 추출된 데이터는 저해상도 색상 맵과 방향장이다.
+**원화** — 반 고흐(1853–1890)의 회화는 퍼블릭 도메인이고, 사용한 스캔도 모두
+Wikimedia Commons의 퍼블릭 도메인 파일이다. 리포에 들어 있는 건 원본 이미지가
+아니라 저해상도 색상 맵과 방향장이다. 작품별 출처 파일과 크롭 값은
+[`lib/scenes/SOURCES.md`](lib/scenes/SOURCES.md)에 있다.
+
+**폰트** — OG 카드용 `assets/og/*.woff`는 Noto Sans KR 서브셋으로,
+리포 조건과 무관하게 [SIL Open Font License 1.1](assets/og/OFL.txt)을 따른다
+(© 2014-2021 Adobe, Reserved Font Name 'Source'). UI 폰트 Inter도 OFL이며
+`next/font`가 빌드 시 받아온다.

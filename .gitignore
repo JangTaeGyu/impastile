@@ -43,6 +43,9 @@ next-env.d.ts
 .DS_Store
 .idea/
 
+# 원화 추출 스크립트용 (pillow·numpy)
+.venv/
+
 # OG 카드 확인용 스냅샷 — 실물은 /opengraph-image 라우트가 만든다
 # npm run build && cp .next/server/app/opengraph-image.body public/og-preview.png
 public/og-preview.png

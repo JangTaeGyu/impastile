@@ -20,6 +20,8 @@
    `python scripts/extract-painting.py --src img.jpg --out lib/scenes/xxxData.ts [--crop t,r,b,l]`
    액자 테두리·워터마크는 `--crop`으로 잘라낸다.
 3. `xxx.ts` 래퍼를 만들고 `index.ts`의 `baseWorks`에 등록한다.
+4. **`SOURCES.md`에 출처(Commons 파일명)와 크롭 값을 적는다.** 이걸 빠뜨리면
+   나중에 색상 맵을 후보 파일과 대조해 역산해야 한다.
 
 ## 원리
 
