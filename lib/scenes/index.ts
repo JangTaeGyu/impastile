@@ -170,6 +170,66 @@ export const monetWorks: WorkEntry[] = [
     aspect: 94 / 144,
     load: () => import("./monetRouenData").then((m) => paintingWork(m.data)),
   },
+  {
+    title: "까치",
+    sub: "La Pie · 1868–69 · 오르세 미술관",
+    desc: "눈 덮인 울타리에 까치 한 마리. 그림자를 검정이 아니라 푸른 빛으로 칠해 살롱에서 떨어졌다.",
+    cell: CELL,
+    aspect: 144 / 98,
+    load: () => import("./monetMagpieData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "라 그르누예르",
+    sub: "La Grenouillère · 1869 · 메트로폴리탄 미술관",
+    desc: "센강의 물놀이터. 르누아르와 나란히 이젤을 세우고 같은 수면을 그렸다.",
+    cell: CELL,
+    aspect: 144 / 108,
+    load: () =>
+      import("./monetGrenouillereData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "양산을 쓴 여인",
+    sub: "Woman with a Parasol · 1875 · 워싱턴 내셔널 갤러리",
+    desc: "언덕 위의 아내와 아들. 바람이 베일과 풀을 한 방향으로 눕힌다.",
+    cell: CELL,
+    aspect: 116 / 144,
+    load: () => import("./monetParasolData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "생라자르 역",
+    sub: "La Gare Saint-Lazare · 1877 · 오르세 미술관",
+    desc: "유리 지붕 아래 증기가 차오른다. 기차가 아니라 빛이 지나는 공기를 그렸다.",
+    cell: CELL,
+    aspect: 144 / 107,
+    load: () =>
+      import("./monetGareSaintLazareData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "짚가리",
+    sub: "Meules, fin de l'été · 1890–91 · 시카고 미술관",
+    desc: "같은 짚가리를 스물다섯 번 그렸다. 형태는 핑계고 시간마다 갈리는 색이 주제다.",
+    cell: CELL,
+    aspect: 144 / 85,
+    load: () =>
+      import("./monetHaystacksData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "포플러",
+    sub: "Peupliers · 1891 · 필라델피아 미술관",
+    desc: "엡트 강가의 포플러. 베어 팔릴 나무를 사들여 다 그릴 때까지 세워두었다.",
+    cell: CELL,
+    aspect: 114 / 144,
+    load: () => import("./monetPoplarsData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "수련 연못과 일본식 다리",
+    sub: "Bridge over a Pond of Water Lilies · 1899 · 메트로폴리탄 미술관",
+    desc: "지베르니에 손수 판 연못. 일본 판화에서 본 다리를 그 위에 놓았다.",
+    cell: CELL,
+    aspect: 115 / 144,
+    load: () =>
+      import("./monetWaterLilyPondData").then((m) => paintingWork(m.data)),
+  },
 ];
 
 export const munchWorks: WorkEntry[] = [
@@ -196,6 +256,64 @@ export const munchWorks: WorkEntry[] = [
     cell: CELL,
     aspect: 144 / 94,
     load: () => import("./munchDanceData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "병든 아이",
+    sub: "Det syke barn · 1885–86 · 노르웨이 국립미술관",
+    desc: "열다섯에 죽은 누나 소피에. 긁어내고 다시 칠하기를 되풀이해 표면이 상처처럼 남았다.",
+    cell: CELL,
+    aspect: 142 / 144,
+    load: () =>
+      import("./munchSickChildData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "칼 요한 거리의 저녁",
+    sub: "Aften på Karl Johan · 1892 · KODE 베르겐",
+    desc: "오슬로의 큰길. 마주 오는 얼굴들이 하나같이 가면처럼 창백하다.",
+    cell: CELL,
+    aspect: 144 / 100,
+    load: () =>
+      import("./munchKarlJohanData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "불안",
+    sub: "Angst · 1894 · 뭉크 미술관",
+    desc: "절규와 같은 다리, 같은 하늘. 비명 대신 굳은 얼굴들이 정면으로 걸어 나온다.",
+    cell: CELL,
+    aspect: 112 / 144,
+    load: () => import("./munchAnxietyData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "재",
+    sub: "Aske · 1894–95 · 노르웨이 국립미술관",
+    desc: "숲에서 나온 여자가 머리를 풀어헤치고, 남자는 등을 돌려 웅크린다.",
+    cell: CELL,
+    aspect: 144 / 123,
+    load: () => import("./munchAshesData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "마돈나",
+    sub: "Madonna · 1894–95 · 노르웨이 국립미술관",
+    desc: "눈을 감고 뒤로 젖힌 상반신. 성모의 이름을 붙였으나 후광 자리에 붉은 띠가 돈다.",
+    cell: CELL,
+    aspect: 111 / 144,
+    load: () => import("./munchMadonnaData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "사춘기",
+    sub: "Pubertet · 1894–95 · 노르웨이 국립미술관",
+    desc: "침대 끝에 앉은 소녀. 뒤로 드리운 그림자가 몸보다 크게 부풀어 있다.",
+    cell: CELL,
+    aspect: 105 / 144,
+    load: () => import("./munchPubertyData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "흡혈귀",
+    sub: "Vampyr · 1895 · 뭉크 미술관",
+    desc: "붉은 머리칼이 남자의 목을 덮는다. 뭉크 자신은 이 그림을 '사랑과 고통'이라 불렀다.",
+    cell: CELL,
+    aspect: 144 / 120,
+    load: () => import("./munchVampireData").then((m) => paintingWork(m.data)),
   },
 ];
 
@@ -224,6 +342,66 @@ export const cezanneWorks: WorkEntry[] = [
     cell: CELL,
     aspect: 144 / 115,
     load: () => import("./cezanneApplesData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "목맨 사람의 집",
+    sub: "La Maison du pendu · 1873 · 오르세 미술관",
+    desc: "오베르의 비탈길. 피사로 곁에서 익힌 밝은 색을 흙손처럼 두껍게 올렸다.",
+    cell: CELL,
+    aspect: 144 / 121,
+    load: () =>
+      import("./cezanneHangedManData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "붉은 안락의자의 세잔 부인",
+    sub: "Madame Cézanne in a Red Armchair · 1877년경 · 보스턴 미술관",
+    desc: "오르탕스를 그린 스물몇 점 중 하나. 치마의 무늬와 벽지가 같은 무게로 놓인다.",
+    cell: CELL,
+    aspect: 111 / 144,
+    load: () =>
+      import("./cezanneMadameRedChairData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "에스타크에서 본 마르세유 만",
+    sub: "Le Golfe de Marseille vu de L'Estaque · 1885년경 · 시카고 미술관",
+    desc: "지붕 너머의 바다. 물을 수평 붓질로만 채워 벽처럼 세웠다.",
+    cell: CELL,
+    aspect: 144 / 115,
+    load: () => import("./cezanneEstaqueData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "생빅투아르산과 큰 소나무",
+    sub: "Mont Sainte-Victoire with Large Pine · 1887년경 · 코톨드 갤러리",
+    desc: "소나무 가지가 산을 가로질러 액자처럼 걸린다. 골짜기의 집들도 산과 같은 붓결이다.",
+    cell: CELL,
+    aspect: 144 / 104,
+    load: () =>
+      import("./cezanneSainteVictoireData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "사과와 오렌지가 있는 정물",
+    sub: "Nature morte aux pommes et aux oranges · 1899년경 · 오르세 미술관",
+    desc: "탁자보의 주름이 화면을 대각으로 가른다. 접시는 위에서, 병은 옆에서 봤다.",
+    cell: CELL,
+    aspect: 144 / 113,
+    load: () =>
+      import("./cezanneApplesOrangesData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "앙브루아즈 볼라르의 초상",
+    sub: "Portrait d'Ambroise Vollard · 1899 · 프티 팔레",
+    desc: "화상 볼라르를 백 번 넘게 앉혔다. 얼굴도 정물처럼 면을 쌓아 세웠다.",
+    cell: CELL,
+    aspect: 117 / 144,
+    load: () => import("./cezanneVollardData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "대수욕도",
+    sub: "Les Grandes Baigneuses · 1900–1906 · 필라델피아 미술관",
+    desc: "일곱 해를 붙들고 끝내 미완으로 남긴 최대작. 나무가 아치를 이뤄 인물을 감싼다.",
+    cell: CELL,
+    aspect: 144 / 120,
+    load: () => import("./cezanneBathersData").then((m) => paintingWork(m.data)),
   },
 ];
 
