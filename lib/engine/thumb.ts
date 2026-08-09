@@ -1,5 +1,5 @@
 import { mosaicSvg } from "./mosaicSvg";
-import type { Work } from "./types";
+import type { Work, WorkEntry } from "./types";
 
 // 썸네일도 같은 모자이크로 굽는다.
 // 스트로크 기하를 세 번째로 베끼지 않으려고 mosaicSvg를 그대로 쓴다 —
@@ -19,12 +19,11 @@ export function thumbSrc(work: Work): string {
   if (hit) return hit;
   // 상자를 작품 비율에 맞추므로 썸네일 안에는 여백이 생기지 않는다
   const aspect = work.aspect ?? 1.4;
-  const width = Math.max(24, Math.round(THUMB_H * aspect));
   const svg = mosaicSvg({
     scene: work.scene,
     flow: work.flow,
     aspect,
-    width,
+    width: thumbWidth(aspect),
     height: THUMB_H,
     cell: THUMB_CELL,
   });
@@ -33,7 +32,12 @@ export function thumbSrc(work: Work): string {
   return src;
 }
 
-/** 썸네일 상자 너비 — 레이아웃이 이미지 로드를 기다리지 않게 미리 알려준다 */
-export function thumbWidth(work: Work): number {
-  return Math.max(24, Math.round(THUMB_H * (work.aspect ?? 1.4)));
+/**
+ * 썸네일 상자 너비. 데이터를 받기 전에도 WorkEntry.aspect로 구할 수 있어
+ * 자리를 미리 잡아둔다 — 나중에 채우면 띠가 덜컹거린다.
+ */
+export function thumbWidth(aspectOrEntry: number | WorkEntry): number {
+  const a =
+    typeof aspectOrEntry === "number" ? aspectOrEntry : aspectOrEntry.aspect;
+  return Math.max(24, Math.round(THUMB_H * a));
 }

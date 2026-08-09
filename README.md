@@ -102,9 +102,9 @@ lib/
     thumb.ts          작품 썸네일 (mosaicSvg를 셀 4px로)
   scenes/
     painting.ts       원화 데이터 디코드 + 샘플링 씬/방향장 생성
-    <작품>Data.ts     자동 생성 데이터 (색상 맵 + 방향장)
-    <작품>.ts         3줄 래퍼
+    <작품>Data.ts     자동 생성 데이터 (색상 맵 + 방향장) — 지연 로드된다
     index.ts          baseWorks 레지스트리, 작가 정보, exhibits 전시관 목록
+    load.ts           작품 데이터 지연 로드 + 캐시 + 배경 선로딩
     extract.ts        추출기의 브라우저 판 + 톤 자동 보정 (autoTone)
     fromFile.ts       올린 파일 → Work
   ogCopy.json         OG 카드 문구 (폰트 서브셋의 입력이기도 하다)

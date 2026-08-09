@@ -4,9 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import MosaicCanvas from "./MosaicCanvas";
 import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
+import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
+import { entryFromFile } from "@/lib/scenes/fromFile";
 import { THUMB_H, thumbSrc, thumbWidth } from "@/lib/engine/thumb";
-import { workFromFile } from "@/lib/scenes/fromFile";
-import type { Work } from "@/lib/engine/types";
+import type { Work, WorkEntry } from "@/lib/engine/types";
 
 const AUTO_MS = 7000;
 const FADE_MS = 420;
@@ -16,23 +17,25 @@ const NOTICE_MS = 4000;
 const MY_TAB = exhibits.length;
 
 export default function Gallery() {
-  const [mine, setMine] = useState<Work[]>([]); // 나의 전시관
+  const [mine, setMine] = useState<WorkEntry[]>([]); // 나의 전시관
   const [tab, setTab] = useState(0);
-  const [idx, setIdx] = useState(0); // 캔버스가 그리는 작품 (탭 안에서의 자리)
+  const [idx, setIdx] = useState(0); // 띠에서 고른 자리 — 데이터를 기다리지 않는다
+  const [cur, setCur] = useState<Work | null>(null); // 캔버스가 그리는 작품
   // 제목이 보여주는 작품 — 전환이 끝난 뒤 갱신되므로 자리가 아니라 값으로 든다
-  const [shown, setShown] = useState<{ work: Work; tab: number }>({
-    work: exhibits[0].works[0],
-    tab: 0,
-  });
+  const [shown, setShown] = useState<{ work: Work; tab: number } | null>(null);
   const [fading, setFading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  // 뒤에서 한 점씩 도착할 때마다 썸네일을 다시 그리게 하는 신호
+  const [, bumpLoaded] = useState(0);
 
   const idxRef = useRef(idx);
   // 콜백이 매번 다시 만들어지지 않도록 최신 값을 ref로도 들고 있는다
   const tabRef = useRef(0);
-  const mineRef = useRef<Work[]>([]);
+  const mineRef = useRef<WorkEntry[]>([]);
+  // 늦게 도착한 로드가 그 사이 바뀐 선택을 덮어쓰지 않게 하는 순번
+  const seqRef = useRef(0);
   const fadeTimer = useRef(0);
   const noticeTimer = useRef(0);
   const resetAuto = useRef(() => {});
@@ -46,38 +49,12 @@ export default function Gallery() {
   // 선택이 넘어가면 띠도 따라 굴러간다 (block:nearest — 세로로는 안 움직인다)
   useEffect(() => {
     const el = trackRef.current?.children[idx];
-    el?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    el?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    });
   }, [idx]);
-
-  /** 탭 번호로 그 전시관의 작품 목록을 얻는다 */
-  const worksOf = (t: number) =>
-    t < exhibits.length ? exhibits[t].works : mineRef.current;
-
-  /** 현재 탭 안에서 i번째 작품으로 (순환) */
-  const go = useCallback((i: number) => {
-    const list = worksOf(tabRef.current);
-    if (!list.length) return;
-    const n = ((i % list.length) + list.length) % list.length;
-    const t = tabRef.current;
-    setIdx(n);
-    setFading(true);
-    window.clearTimeout(fadeTimer.current);
-    fadeTimer.current = window.setTimeout(() => {
-      setShown({ work: list[n], tab: t });
-      setFading(false);
-    }, FADE_MS);
-  }, []);
-
-  /** 전시관 전환 — 비어 있는 전시관은 고를 수 없다 (탭이 비활성) */
-  const selectTab = useCallback(
-    (t: number) => {
-      if (!worksOf(t).length) return;
-      tabRef.current = t;
-      setTab(t);
-      go(0);
-    },
-    [go],
-  );
 
   const say = useCallback((msg: string) => {
     setNotice(msg);
@@ -85,7 +62,67 @@ export default function Gallery() {
     noticeTimer.current = window.setTimeout(() => setNotice(""), NOTICE_MS);
   }, []);
 
-  /** 고른 파일을 씬으로 만들어 갤러리 뒤에 붙이고 첫 장으로 넘어간다 */
+  /** 탭 번호로 그 전시관의 작품 목록을 얻는다 */
+  const entriesOf = (t: number) =>
+    t < exhibits.length ? exhibits[t].works : mineRef.current;
+
+  /**
+   * 현재 탭 안에서 i번째 작품으로 (순환).
+   * 데이터가 아직 없으면 받아온 뒤에 캔버스를 넘긴다 — 그동안 화면은 이전
+   * 작품을 그대로 들고 있고, 띠의 표시만 먼저 옮겨간다.
+   */
+  const go = useCallback((i: number) => {
+    const t = tabRef.current;
+    const list = entriesOf(t);
+    if (!list.length) return;
+    const n = ((i % list.length) + list.length) % list.length;
+    setIdx(n);
+    const seq = ++seqRef.current;
+    loadWork(list[n])
+      .then((w) => {
+        if (seqRef.current !== seq) return; // 그 사이 다른 작품을 골랐다
+        setCur(w);
+        setFading(true);
+        window.clearTimeout(fadeTimer.current);
+        fadeTimer.current = window.setTimeout(() => {
+          setShown({ work: w, tab: t });
+          setFading(false);
+        }, FADE_MS);
+      })
+      .catch(() => {
+        if (seqRef.current === seq) say("작품을 불러오지 못했습니다");
+      });
+  }, [say]);
+
+  /** 전시관 전환 — 비어 있는 전시관은 고를 수 없다 (탭이 비활성) */
+  const selectTab = useCallback(
+    (t: number) => {
+      if (!entriesOf(t).length) return;
+      tabRef.current = t;
+      setTab(t);
+      go(0);
+    },
+    [go],
+  );
+
+  // 첫 작품부터 받고, 자리를 잡은 뒤 나머지를 한 점씩 따라 받는다.
+  // 썸네일 때문에 결국 전부 필요하지만, 첫 화면이 900KB를 기다리지는 않는다.
+  useEffect(() => {
+    let alive = true;
+    go(0);
+    (async () => {
+      await preloadWorks(
+        exhibits.flatMap((e) => e.works),
+        () => bumpLoaded((v) => v + 1),
+        () => alive,
+      );
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [go]);
+
+  /** 고른 파일을 씬으로 만들어 나의 전시관에 담고 첫 장으로 넘어간다 */
   const addFiles = useCallback(
     async (list: FileList | File[] | null | undefined) => {
       const files = Array.from(list ?? []).filter((f) =>
@@ -96,11 +133,11 @@ export default function Gallery() {
         return;
       }
       setBusy(true);
-      const added: Work[] = [];
+      const added: WorkEntry[] = [];
       let failed = 0;
       for (const f of files) {
         try {
-          added.push(await workFromFile(f));
+          added.push(await entryFromFile(f));
         } catch {
           // HEIC처럼 브라우저가 디코드하지 못하는 형식이 여기로 온다
           failed++;
@@ -115,7 +152,6 @@ export default function Gallery() {
         );
       }
       if (!added.length) return;
-      // 올린 이미지는 나의 전시관에 담고 그 첫 장으로 넘어간다
       const next = [...mineRef.current, ...added];
       mineRef.current = next;
       setMine(next);
@@ -202,38 +238,39 @@ export default function Gallery() {
     };
   }, [addFiles]);
 
-
   const works = tab < exhibits.length ? exhibits[tab].works : mine;
   const tabs = [
     ...exhibits.map((e) => ({ name: e.name, count: e.works.length })),
     { name: MY_EXHIBIT, count: mine.length },
   ];
-  const artist = exhibits[shown.tab]?.artist;
+  const artist = shown ? exhibits[shown.tab]?.artist : undefined;
 
   return (
     <>
-      <MosaicCanvas work={works[idx] ?? shown.work} />
+      {cur && <MosaicCanvas work={cur} />}
       <div className="grain" />
       <div className="scrim" />
 
       <div className="ui">
         <Logo />
         <div className="panel">
-          <div className={`fade${fading ? " out" : ""}`}>
-            <div className="kicker">
-              {shown.work.uploaded ? MY_EXHIBIT : shown.work.sub}
+          {shown && (
+            <div className={`fade${fading ? " out" : ""}`}>
+              <div className="kicker">
+                {shown.work.uploaded ? MY_EXHIBIT : shown.work.sub}
+              </div>
+              <h1>{shown.work.title}</h1>
+              {artist && !shown.work.uploaded && (
+                <>
+                  <p className="desc">{shown.work.desc}</p>
+                  <div className="meta">
+                    <b>{artist.ko}</b> · {artist.en} · {artist.era} ·{" "}
+                    {artist.movement}
+                  </div>
+                </>
+              )}
             </div>
-            <h1>{shown.work.title}</h1>
-            {artist && !shown.work.uploaded && (
-              <>
-                <p className="desc">{shown.work.desc}</p>
-                <div className="meta">
-                  <b>{artist.ko}</b> · {artist.en} · {artist.era} ·{" "}
-                  {artist.movement}
-                </div>
-              </>
-            )}
-          </div>
+          )}
         </div>
       </div>
 
@@ -255,69 +292,80 @@ export default function Gallery() {
           ))}
         </div>
         <div className="rail-row">
-        <div className="rail-track" ref={trackRef}>
-          {works.length === 0 && (
-            <span className="rail-empty">
-              이미지를 올리면 여기에 담깁니다
-            </span>
-          )}
-          {works.map((w, i) => (
+          <div className="rail-track" ref={trackRef}>
+            {works.length === 0 && (
+              <span className="rail-empty">이미지를 올리면 여기에 담깁니다</span>
+            )}
+            {works.map((e, i) => {
+              const w = loadedWork(e);
+              return (
+                <button
+                  key={i}
+                  className={`thumb${i === idx ? " on" : ""}`}
+                  onClick={() => go(i)}
+                  title={e.title}
+                  aria-label={e.title}
+                  aria-current={i === idx}
+                >
+                  {w ? (
+                    <>
+                      {/* 런타임에 구운 SVG data URI라 next/image로 최적화할 대상이 아니다 */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={thumbSrc(w)}
+                        alt=""
+                        width={thumbWidth(e)}
+                        height={THUMB_H}
+                      />
+                    </>
+                  ) : (
+                    // 아직 안 받은 작품 — 도착하면 띠가 덜컹거리지 않도록 자리만 잡는다
+                    <span
+                      className="thumb-wait"
+                      style={{ width: thumbWidth(e), height: THUMB_H }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          {notice && <span className="notice">{notice}</span>}
+          <div className="nav">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+              onChange={(e) => {
+                addFiles(e.target.files);
+                e.target.value = ""; // 같은 파일을 다시 골라도 change가 오도록
+              }}
+            />
             <button
-              key={i}
-              className={`thumb${i === idx ? " on" : ""}`}
-              onClick={() => go(i)}
-              title={w.title}
-              aria-label={w.title}
-              aria-current={i === idx}
+              className="arrow"
+              onClick={() => fileRef.current?.click()}
+              disabled={busy}
+              title="내 이미지 올리기 — 끌어다 놓거나 붙여넣어도 됩니다"
+              aria-label="내 이미지 올리기"
             >
-              {/* 런타임에 구운 SVG data URI라 next/image로 최적화할 대상이 아니다 */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={thumbSrc(w)}
-                alt=""
-                width={thumbWidth(w)}
-                height={THUMB_H}
-              />
+              {busy ? "…" : "+"}
             </button>
-          ))}
-        </div>
-        {notice && <span className="notice">{notice}</span>}
-        <div className="nav">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            hidden
-            onChange={(e) => {
-              addFiles(e.target.files);
-              e.target.value = ""; // 같은 파일을 다시 골라도 change가 오도록
-            }}
-          />
-          <button
-            className="arrow"
-            onClick={() => fileRef.current?.click()}
-            disabled={busy}
-            title="내 이미지 올리기 — 끌어다 놓거나 붙여넣어도 됩니다"
-            aria-label="내 이미지 올리기"
-          >
-            {busy ? "…" : "+"}
-          </button>
-          <button
-            className="arrow"
-            onClick={() => go(idx - 1)}
-            aria-label="이전 작품"
-          >
-            ‹
-          </button>
-          <button
-            className="arrow"
-            onClick={() => go(idx + 1)}
-            aria-label="다음 작품"
-          >
-            ›
-          </button>
-        </div>
+            <button
+              className="arrow"
+              onClick={() => go(idx - 1)}
+              aria-label="이전 작품"
+            >
+              ‹
+            </button>
+            <button
+              className="arrow"
+              onClick={() => go(idx + 1)}
+              aria-label="다음 작품"
+            >
+              ›
+            </button>
+          </div>
         </div>
       </div>
 

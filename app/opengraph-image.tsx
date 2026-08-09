@@ -14,7 +14,9 @@ export const contentType = "image/png";
 // 캔버스 셀(13px)보다 크게 잡아야 축소된 공유 카드에서도 붓결이 읽힌다.
 // 갤러리는 원본 비율을 지켜 여백을 두지만 공유 카드는 꽉 차야 하므로 cover —
 // 어느 쪽이든 늘리지 않으므로 붓결 각도는 원본 그대로다.
-const [starry] = baseWorks;
+// 작품 데이터는 지연 로드라 여기서도 받아 쓴다 (서버에서 한 번 굽고 끝난다)
+const [starryEntry] = baseWorks;
+const starry = await starryEntry.load();
 const mosaic = `data:image/svg+xml;base64,${Buffer.from(
   mosaicSvg({
     scene: starry.scene,

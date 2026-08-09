@@ -31,3 +31,28 @@ export interface Work {
   /** 사용자가 올린 이미지 — 붙일 작품 정보가 없어 패널이 파일명만 보여준다 */
   uploaded?: boolean;
 }
+
+/** 무거운 데이터를 뺀 Work — 이것만 있으면 목록과 썸네일 자리를 잡을 수 있다 */
+export type WorkParts = Pick<Work, "scene" | "flow" | "aspect">;
+
+/**
+ * 아직 데이터를 받지 않은 작품.
+ *
+ * 회화 한 점의 색상 맵 + 방향장은 gzip 기준 약 75KB다. 12점을 모두 번들에
+ * 넣으면 첫 화면에 900KB를 받고 시작하게 되므로, 글로 된 정보만 미리 들고
+ * 무거운 쪽은 `load()`로 미룬다.
+ */
+export interface WorkEntry {
+  title: string;
+  sub: string;
+  desc: string;
+  cell: number;
+  /**
+   * 원본 가로/세로. 데이터가 오기 전에도 썸네일 상자를 제 크기로 잡으려고
+   * 미리 적어둔다 — 나중에 채우면 띠가 덜컹거린다.
+   * 실제 데이터와 어긋나면 개발 모드에서 경고한다 (`loadWork`).
+   */
+  aspect: number;
+  uploaded?: boolean;
+  load: () => Promise<WorkParts>;
+}

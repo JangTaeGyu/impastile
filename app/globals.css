@@ -315,6 +315,12 @@ h1 {
   display: block;
   border-radius: 2px;
 }
+/* 아직 데이터를 못 받은 작품 — 도착하면 그 자리에 그대로 들어찬다 */
+.thumb-wait {
+  display: block;
+  border-radius: 2px;
+  background: rgba(246, 243, 232, 0.07);
+}
 
 @media (max-width: 720px) {
   :root {

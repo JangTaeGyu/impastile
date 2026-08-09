@@ -9,10 +9,12 @@
   쌍선형 샘플링 씬(`paintingScene`)과 붓결 방향장(`paintingFlow`)을 만든다.
 - `<name>Data.ts` — `scripts/extract-painting.py`가 생성한 자동 생성 파일.
   색상 맵(최대 변 144px RGB)과 붓결 방향장(배각 2θ 벡터, int8 x 2)을 담는다.
-- `<name>.ts` — 3줄짜리 래퍼. `paintingWork(data)`가 돌려주는
-  `{ scene, flow, aspect }`를 그대로 export한다.
-- `index.ts` — `baseWorks` 레지스트리(제목·셀 크기·scene·flow·aspect)와
-  `exhibits` 전시관 목록. 하단 띠의 탭이 이 목록에서 나온다.
+  **정적으로 import하지 않는다** — 아래 '지연 로드' 참고.
+- `index.ts` — `baseWorks` 레지스트리(글로 된 정보 + `load()`)와 `exhibits`
+  전시관 목록. 하단 띠의 탭이 이 목록에서 나온다.
+- `types.ts` — `Artist`, `Exhibit`.
+- `load.ts` — `load()`를 불러 `Work`로 만들고 기억해 둔다. 뒤에서 한 점씩
+  미리 받아두는 `preloadWorks`도 여기 있다.
 - `extract.ts` — 추출기의 브라우저 판. 임의의 이미지에서 `PaintingData`를
   런타임에 만든다 (아래 참고).
 - `fromFile.ts` — 사용자가 올린 `File`을 `Work` 하나로 만든다. 추출 → `autoTone`
@@ -40,8 +42,17 @@ export const exhibits: Exhibit[] = [
 2. 데이터 생성 (pillow·numpy 필요):
    `python scripts/extract-painting.py --src img.jpg --out lib/scenes/xxxData.ts [--crop t,r,b,l]`
    액자 테두리·워터마크는 `--crop`으로 잘라낸다.
-3. `xxx.ts` 래퍼를 만들고(`export const xxx = paintingWork(data)`)
-   `index.ts`의 `baseWorks`에 `...xxx`로 펼쳐 넣는다.
+3. `index.ts`의 `baseWorks`에 항목을 하나 넣는다. `aspect`에는 생성 로그가
+   찍어준 색상 맵 크기를 그대로 적는다 (`144 / 107` 식으로 쓰면 나중에 대조하기 쉽다).
+
+   ```ts
+   {
+     title: "…", sub: "…", desc: "…",
+     cell: CELL,
+     aspect: 144 / 107,
+     load: () => import("./xxxData").then((m) => paintingWork(m.data)),
+   }
+   ```
 4. **`SOURCES.md`에 출처(Commons 파일명)와 크롭 값을 적는다.** 이걸 빠뜨리면
    나중에 색상 맵을 후보 파일과 대조해 역산해야 한다.
 
@@ -73,6 +84,22 @@ node scripts/verify-extract.mjs /tmp/d
 원본을 듬성듬성 집어 계단현상이 남고, 그래디언트를 먹고 사는 방향장이 그걸
 가짜 결로 바꿔놓는다 (실측: 별이 빛나는 밤에서 파이썬과의 방향 일치도가
 0.977 → 0.993).
+
+## 지연 로드
+
+작품 하나의 데이터는 gzip 기준 약 75KB다. 12점을 모두 번들에 넣으면 첫 화면에서
+900KB를 받고 시작하게 되므로, `index.ts`에는 **글로 된 정보만** 두고 무거운 쪽은
+`load()`의 동적 import로 미룬다. 그래서 `<작품>Data.ts`를 정적으로 import하는
+곳이 하나도 없어야 한다 — 한 군데라도 있으면 그 순간 전부 번들에 딸려 들어간다.
+
+- 지금 보는 작품부터 받는다 (`loadWork`).
+- 나머지는 뒤에서 한 점씩 따라 받는다 (`preloadWorks`). 썸네일 때문에 결국
+  전부 필요하지만, 첫 화면이 그걸 기다리지는 않는다.
+- 아직 안 온 작품은 띠에서 자리만 잡고 있다가 도착하면 들어찬다.
+
+**`aspect`는 손으로 적은 값이다.** 데이터를 받기 전에도 썸네일 상자를 제 크기로
+잡아야 띠가 덜컹거리지 않아서 미리 적어둔다. 데이터를 다시 뽑았는데 여기를 안
+고치면 `loadWork`가 개발 모드에서 콘솔에 경고한다.
 
 ## 임의 이미지의 톤
 

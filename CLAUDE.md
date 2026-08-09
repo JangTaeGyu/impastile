@@ -30,6 +30,11 @@ npm run lint     # ESLint
 
 - **`<작품>Data.ts`는 자동 생성 파일이다.** 직접 편집하지 말고
   `scripts/extract-painting.py`를 다시 돌린다 (pillow·numpy 필요, venv 권장).
+- **`<작품>Data.ts`를 정적으로 import하지 않는다.** 한 점당 gzip 75KB라 전부
+  번들에 넣으면 첫 화면이 900KB를 기다린다. `index.ts`의 `load()` 동적 import로만
+  들어와야 하고, 한 군데라도 정적으로 부르면 그 순간 전부 딸려 들어간다.
+  `aspect`는 손으로 적은 값이라 데이터를 다시 뽑으면 같이 고친다 (안 고치면
+  `loadWork`가 개발 모드에서 경고한다).
 - **추출기는 두 벌이다.** 위 파이썬 스크립트와 `lib/scenes/extract.ts`(브라우저
   런타임 판)는 같은 결과를 내야 한다. 한쪽을 고치면 다른 쪽도 고치고,
   `scripts/verify-extract.mjs`로 대조한다. 자세한 건 `lib/scenes/README.md`.
