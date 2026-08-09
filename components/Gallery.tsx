@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import MosaicCanvas from "./MosaicCanvas";
-import { ARTIST, MODEL, baseWorks } from "@/lib/scenes";
+import { ARTIST, baseWorks } from "@/lib/scenes";
 
 const AUTO_MS = 7000;
 const FADE_MS = 420;
@@ -75,8 +75,6 @@ export default function Gallery() {
             <div className="meta">
               <b>{ARTIST.ko}</b> · {ARTIST.en} · {ARTIST.era} ·{" "}
               {ARTIST.movement}
-              <br />
-              generated with <b>{MODEL.name}</b> · {MODEL.id}
             </div>
           </div>
         </div>

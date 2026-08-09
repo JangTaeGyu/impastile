@@ -13,11 +13,6 @@ export const ARTIST = {
   movement: "후기 인상주의",
 };
 
-export const MODEL = {
-  name: "Claude Fable 5",
-  id: "claude-fable-5",
-};
-
 export const baseWorks: Work[] = [
   {
     title: "별이 빛나는 밤에",
