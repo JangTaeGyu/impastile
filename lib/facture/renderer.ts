@@ -9,6 +9,20 @@ const BG = `rgb(${BG_R},${BG_G},${BG_B})`;
 const MIX_RATE = 2.7; // 크로스페이드 속도 (1/s) — 완료까지 약 0.37s
 const MAX_DT = 0.25; // 스로틀·탭 복귀 시 시간 점프 상한 (s)
 
+/**
+ * 초당 그리는 장수 상한.
+ *
+ * 한 장에 스트로크 2만 5천 개를 긋는데, 비용은 칠하는 넓이가 아니라 그 호출
+ * 하나하나에 붙는다 (면적을 75% 줄여도 7%가 빠지고, 개수를 41% 줄이면 39%가
+ * 빠진다). 그러니 해상도나 붓터치 크기를 건드리는 대신 장수를 줄인다.
+ *
+ * 한 장 안에서 움직이는 것은 아주 느린 색 표류(0.003)와 ±4% 숨결뿐이라
+ * 60에서 30으로 내려도 정지 화면은 완전히 같고 움직임의 결도 유지된다.
+ */
+const FPS_CAP = 30;
+// 표시 주기가 딱 나누어떨어지지 않아 한 장씩 걸러지는 것을 막는 여유
+const MIN_DT = 1 / FPS_CAP - 0.004;
+
 // 방향장이 없는 씬의 기본 흐름 — 완만하게 굽이치는 수평 붓결
 export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
   0.35 * Math.sin(nx * 5 + ny * 3) + 0.2 * Math.sin(ny * 9 - nx * 4);
@@ -59,6 +73,83 @@ function groundColor(
   out[2] = GROUND_B + (c[2] - GROUND_B) * k;
 }
 
+// ── 셀 상수 표 ────────────────────────────────────────────────────────────
+// hash(cI, rI)가 주는 붓값·길이·폭·자리 흔들림은 **셀 인덱스에만** 달렸다.
+// 시간에도 셀 크기에도 무관하니 프레임마다 다시 구할 이유가 없는데, 셀당 5번
+// (=프레임당 6만 번) Math.sin을 돌고 있었다. 격자가 바뀔 때만 한 번 굽는다.
+class CellTable {
+  readonly stride: number;
+  readonly brush: Float32Array;
+  readonly lenF: Float32Array;
+  readonly wdtF: Float32Array;
+  readonly jx: Float32Array;
+  readonly jy: Float32Array;
+  /** 숨결 sin(t·5 + cI + rI)을 각도 덧셈으로 풀기 위한 sin/cos(cI+rI) */
+  readonly bs: Float32Array;
+  readonly bc: Float32Array;
+
+  constructor(
+    readonly cols: number,
+    readonly rows: number,
+  ) {
+    // 셀 하나 바깥부터 그리므로 -1..cols 를 담는다
+    const stride = cols + 2;
+    const n = stride * (rows + 2);
+    this.stride = stride;
+    this.brush = new Float32Array(n);
+    this.lenF = new Float32Array(n);
+    this.wdtF = new Float32Array(n);
+    this.jx = new Float32Array(n);
+    this.jy = new Float32Array(n);
+    for (let rI = -1; rI <= rows; rI++) {
+      const row = (rI + 1) * stride;
+      for (let cI = -1; cI <= cols; cI++) {
+        const i = row + cI + 1;
+        this.brush[i] = 1 + (hash(cI, rI) - 0.5) * 0.16;
+        this.lenF[i] = 1.7 + hash(cI, rI + 13) * 0.6;
+        this.wdtF[i] = 0.5 + hash(cI + 5, rI) * 0.26;
+        this.jx[i] = (hash(cI, rI + 7) - 0.5) * 0.5;
+        this.jy[i] = (hash(cI + 3, rI) - 0.5) * 0.5;
+      }
+    }
+    const kn = cols + rows + 3;
+    this.bs = new Float32Array(kn);
+    this.bc = new Float32Array(kn);
+    for (let k = 0; k < kn; k++) {
+      this.bs[k] = Math.sin(k - 2);
+      this.bc[k] = Math.cos(k - 2);
+    }
+  }
+
+  /** 이 표로 cols×rows 격자를 덮을 수 있나 (줄어드는 쪽은 다시 굽지 않는다) */
+  covers(cols: number, rows: number) {
+    return cols <= this.cols && rows <= this.rows;
+  }
+}
+
+// ── 색 문자열 캐시 ─────────────────────────────────────────────────────────
+// fillStyle에는 문자열밖에 못 넣는다. 셀마다 `rgb(...)`를 새로 짓느라 프레임당
+// 2만 개가 넘는 문자열이 생기고, 브라우저는 그때마다 CSS 색을 다시 파싱한다.
+// 채널당 6비트로 양자화해 캐시를 유한하게 만들고(2^18칸) 같은 문자열 객체를
+// 돌려쓴다 — 브라우저의 파싱 캐시에도 그대로 얹힌다.
+//
+// 잃는 것은 채널당 최대 3/255(1.2%)인데, 이 렌더러는 셀마다 ±8%의 붓값과
+// ±4%의 숨결을 이미 곱하고 있어 눈에 닿지 않는다.
+const CQ = 6;
+const CSHIFT = 8 - CQ;
+const colorTab = new Array<string>(1 << (CQ * 3));
+
+function css(r: number, g: number, b: number): string {
+  const qr = r >> CSHIFT;
+  const qg = g >> CSHIFT;
+  const qb = b >> CSHIFT;
+  const i = (qr << (CQ * 2)) | (qg << CQ) | qb;
+  const hit = colorTab[i];
+  if (hit !== undefined) return hit;
+  return (colorTab[i] =
+    `rgb(${qr << CSHIFT},${qg << CSHIFT},${qb << CSHIFT})`);
+}
+
 /**
  * 임파스토 붓터치 렌더러.
  * 매 프레임 화면을 셀 그리드로 나누고 셀 중심마다 scene 색과 flow 방향을
@@ -87,6 +178,7 @@ export class FactureRenderer {
   // 셀마다 새로 만들지 않도록 미리 잡아둔다 (프레임당 약 1만 회)
   private gPrev: [number, number, number] = [0, 0, 0];
   private gCur: [number, number, number] = [0, 0, 0];
+  private tab: CellTable | null = null;
 
   constructor(
     private cv: HTMLCanvasElement,
@@ -147,15 +239,20 @@ export class FactureRenderer {
   // 120Hz 디스플레이에서도 애니메이션 속도가 일정하다.
   private frame = (now: number) => {
     if (!this.running) return;
-    const dt = this.lastNow
-      ? Math.min((now - this.lastNow) / 1000, MAX_DT)
-      : 1 / 60;
+    this.raf = requestAnimationFrame(this.frame);
+    if (!this.lastNow) {
+      this.lastNow = now;
+      return;
+    }
+    // 아직 한 장을 그릴 만큼 시간이 차지 않았다 — 표시 주기는 그대로 두고
+    // 그리기만 거른다. dt는 걸러진 만큼 쌓여 오므로 속도는 변하지 않는다.
+    const dt = Math.min((now - this.lastNow) / 1000, MAX_DT);
+    if (dt < MIN_DT) return;
     this.lastNow = now;
     this.t += dt;
     if (this.mixT < 1) this.mixT = Math.min(1, this.mixT + MIX_RATE * dt);
     this.cell = lerp(this.cell, this.targetCell, 1 - Math.pow(0.002, dt));
     this.draw();
-    this.raf = requestAnimationFrame(this.frame);
   };
 
   /** 한 장 그린다. 시간을 건드리지 않으므로 멈춘 상태에서도 부를 수 있다 */
@@ -172,6 +269,18 @@ export class FactureRenderer {
     const m = smooth(0, 1, this.mixT);
     const fading = m < 1;
 
+    // 셀 크기가 전환 중 부드럽게 움직이면 격자도 매 프레임 조금씩 바뀐다.
+    // 여유를 두고 굽고 줄어들 때는 그대로 써서, 그때마다 다시 굽지 않는다.
+    let tab = this.tab;
+    if (!tab || !tab.covers(cols, rows)) {
+      tab = this.tab = new CellTable(cols + 8, rows + 8);
+    }
+    const { brush: tBrush, lenF: tLen, wdtF: tWdt, jx: tJx, jy: tJy } = tab;
+    const tStride = tab.stride;
+    // 숨결은 sin(t·5 + k), k = cI + rI. 각도 덧셈으로 풀면 셀당 sin 한 번이 준다.
+    const bSin = Math.sin(PT * 5);
+    const bCos = Math.cos(PT * 5);
+
     // 원본 비율을 지켜 화면에 앉힌다 — 그림 밖은 바닥만 남는다.
     // 씬에 넘기는 비율도 화면이 아니라 그림 영역의 것이어야 한다.
     const cf = fitRect(this.curAspect, ar);
@@ -185,7 +294,9 @@ export class FactureRenderer {
 
     // 회전 스트로크가 화면 가장자리를 비우지 않도록 한 셀 바깥부터 그린다
     for (let rI = -1; rI < rows; rI++) {
+      const tRow = (rI + 1) * tStride;
       for (let cI = -1; cI < cols; cI++) {
+        const ti = tRow + cI + 1;
         const sx = ((cI + 0.5) * cs) / W;
         const sy = ((rI + 0.5) * cs) / H;
         const ux = (sx - cf.x) / cf.w;
@@ -263,17 +374,17 @@ export class FactureRenderer {
         }
         // 임파스토: 셀별 붓값 + 밝은 셀 블룸 + 미세한 숨결
         const lum = (rr * 0.3 + gg * 0.6 + bb * 0.1) / 255;
-        const brush = 1 + (hash(cI, rI) - 0.5) * 0.16;
-        let bright = brush * (1 + 0.5 * smooth(0.62, 1.0, lum));
-        bright *= 1 + 0.04 * Math.sin(PT * 5 + cI + rI);
+        const k = cI + rI + 2;
+        let bright = tBrush[ti] * (1 + 0.5 * smooth(0.62, 1.0, lum));
+        bright *= 1 + 0.04 * (bSin * tab.bc[k] + bCos * tab.bs[k]);
         rr = clamp(rr * bright, 0, 255);
         gg = clamp(gg * bright, 0, 255);
         bb = clamp(bb * bright, 0, 255);
         // 스트로크 기하 — 길이·폭·위치가 셀마다 조금씩 다르다
-        const len = cs * (1.7 + hash(cI, rI + 13) * 0.6);
-        const wdt = cs * (0.5 + hash(cI + 5, rI) * 0.26);
-        const px = cI * cs + cs / 2 + (hash(cI, rI + 7) - 0.5) * cs * 0.5;
-        const py = rI * cs + cs / 2 + (hash(cI + 3, rI) - 0.5) * cs * 0.5;
+        const len = cs * tLen[ti];
+        const wdt = cs * tWdt[ti];
+        const px = cI * cs + cs / 2 + tJx[ti] * cs;
+        const py = rI * cs + cs / 2 + tJy[ti] * cs;
         const cosA = Math.cos(a);
         const sinA = Math.sin(a);
         ctx.setTransform(
@@ -284,14 +395,14 @@ export class FactureRenderer {
           px * dpr,
           py * dpr,
         );
-        ctx.fillStyle = `rgb(${rr | 0},${gg | 0},${bb | 0})`;
+        ctx.fillStyle = css(rr | 0, gg | 0, bb | 0);
         ctx.fillRect(-len / 2, -wdt / 2, len, wdt);
         // 물감이 솟은 릿지 — 어두운 셀에서는 보이지 않으므로 생략 (드로우 절감)
         if (lum > 0.1) {
           const hr = clamp(rr * 1.18 + 14, 0, 255) | 0;
           const hg = clamp(gg * 1.18 + 14, 0, 255) | 0;
           const hb = clamp(bb * 1.14 + 10, 0, 255) | 0;
-          ctx.fillStyle = `rgb(${hr},${hg},${hb})`;
+          ctx.fillStyle = css(hr, hg, hb);
           ctx.fillRect(-len / 2 + len * 0.08, -wdt / 2, len * 0.84, wdt * 0.3);
         }
       }
