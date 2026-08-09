@@ -13,6 +13,8 @@
 - `index.ts` — `baseWorks` 레지스트리 (제목·셀 크기·scene·flow).
 - `extract.ts` — 추출기의 브라우저 판. 임의의 이미지에서 `PaintingData`를
   런타임에 만든다 (아래 참고).
+- `fromFile.ts` — 사용자가 올린 `File`을 `Work` 하나로 만든다. 추출 → `autoTone`
+  → 씬 생성까지 묶은 3줄짜리 진입점. 업로드 UI는 `components/Gallery.tsx`.
 
 ## 새 작품 추가
 

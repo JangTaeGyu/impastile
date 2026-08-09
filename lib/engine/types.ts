@@ -24,4 +24,6 @@ export interface Work {
   scene: Scene;
   /** 붓터치 방향장 — 없으면 완만한 기본 흐름을 쓴다 */
   flow?: FlowFn;
+  /** 사용자가 올린 이미지 — 붙일 작품 정보가 없어 패널이 파일명만 보여준다 */
+  uploaded?: boolean;
 }
