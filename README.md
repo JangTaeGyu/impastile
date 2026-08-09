@@ -7,8 +7,13 @@
 소용돌이치는 밤하늘은 소용돌이 접선을 따라, 사이프러스는 수직 불꽃결을 따라,
 밀밭은 바람에 눕는 방향을 따라 붓이 흐른다.
 
-수록 작품 6점 — 별이 빛나는 밤에 · 해바라기 · 밤의 카페 테라스 · 아를의 침실 ·
-자화상 · 밀밭의 사이프러스.
+수록 작품 12점 — 별이 빛나는 밤에 · 해바라기 · 밤의 카페 테라스 · 아를의 침실 ·
+자화상 · 밀밭의 사이프러스 · 론강의 별이 빛나는 밤 · 붓꽃 · 밤의 카페 · 노란 집 ·
+아몬드 꽃 · 까마귀가 나는 밀밭.
+
+모두 퍼블릭 도메인이다 — 반 고흐는 1890년에 세상을 떠났고, 평면 회화의 충실한
+복제에는 새 저작권이 생기지 않는다(PD-Art). 스캔 출처는
+[`lib/scenes/SOURCES.md`](lib/scenes/SOURCES.md)에 파일명까지 적어두었다.
 
 **내 이미지도 올릴 수 있다.** 네비게이션의 `+`를 누르거나, 화면 아무 데나
 끌어다 놓거나, 붙여넣으면(Cmd+V) 같은 엔진이 그 자리에서 붓결을 뽑아 갤러리
@@ -37,6 +42,9 @@ node scripts/fetch-og-font.mjs   # → assets/og/*.woff (커밋 대상)
 ```
 
 ## 작동 원리
+
+전시 작품은 아래 파이썬 스크립트로 미리 구워 번들에 넣고, 사용자가 올린 이미지는
+같은 파이프라인의 브라우저 판(`lib/scenes/extract.ts`)이 그 자리에서 처리한다.
 
 ### 1. 원화에서 데이터 추출 (빌드 전, 1회)
 
@@ -81,20 +89,24 @@ app/
   globals.css         전역 스타일
 assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
 components/
-  Gallery.tsx         작품 전환 상태, 정보 패널, 네비게이션
+  Gallery.tsx         작품 전환 상태, 정보 패널, 전시관 탭·썸네일 띠, 업로드
   MosaicCanvas.tsx    캔버스 + rAF 루프 수명 관리
   Logo.tsx            브랜드 마크
 lib/
   engine/
     types.ts          Scene, FlowFn, Work
     math.ts           lerp, clamp, smooth, hash
-    renderer.ts       프레임 루프, 스트로크 렌더링, 크로스페이드
-    mosaicSvg.ts      같은 규칙으로 한 프레임을 SVG로 굽기 (서버·OG용)
+    fit.ts            원본 비율을 지켜 화면에 앉히기 (contain / cover)
+    renderer.ts       프레임 루프, 스트로크 렌더링, 크로스페이드, 여백 바탕
+    mosaicSvg.ts      같은 규칙으로 한 프레임을 SVG로 굽기 (서버·OG·썸네일용)
+    thumb.ts          작품 썸네일 (mosaicSvg를 셀 4px로)
   scenes/
     painting.ts       원화 데이터 디코드 + 샘플링 씬/방향장 생성
     <작품>Data.ts     자동 생성 데이터 (색상 맵 + 방향장)
     <작품>.ts         3줄 래퍼
-    index.ts          baseWorks 레지스트리, 작가·모델 정보
+    index.ts          baseWorks 레지스트리, 작가 정보, exhibits 전시관 목록
+    extract.ts        추출기의 브라우저 판 + 톤 자동 보정 (autoTone)
+    fromFile.ts       올린 파일 → Work
   ogCopy.json         OG 카드 문구 (폰트 서브셋의 입력이기도 하다)
 scripts/
   extract-painting.py 원화 → 데이터 모듈 변환기
@@ -106,7 +118,9 @@ scripts/
 ## 조작
 
 - `←` `→` 또는 화살표 버튼 — 작품 이동
-- 하단 도트 — 작품 직접 선택
+- 하단 썸네일 띠 — 작품 직접 선택 (선택이 넘어가면 띠도 따라 굴러간다)
+- 하단 전시관 탭 — 작가별 전시관 / 내가 올린 이미지 전환
+- `+` 버튼 · 드래그 앤 드롭 · `Cmd+V` — 내 이미지 올리기
 - 7초마다 자동 전환 (입력이 있으면 타이머 리셋)
 
 ## 기술 스택
