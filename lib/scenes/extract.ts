@@ -188,6 +188,88 @@ export function stripAlpha(rgba: Uint8ClampedArray, n: number): Uint8Array {
   return out;
 }
 
+// ---- 톤 보정 ----
+//
+// paintingScene의 기본값 sat 1.28 / gain 1.07은 반 고흐 6점에 맞춰 고른 값이다.
+// 임의의 이미지에 그대로 쓰면 무너진다 — 회화는 채도가 0.33~0.63의 좁은 대역에
+// 모여 있지만 사진은 0.20(고양이)에서 0.84(노을)까지 흩어진다. 낮은 쪽은 갤러리
+// 안에서 혼자 잿빛으로 보이고, 높은 쪽은 부스트를 얹으면 포스터처럼 뭉갠다.
+//
+// 그래서 값을 새로 고정하지 않고, 6점이 실제로 차지하는 대역 안으로만 끌어온다.
+// 대역 안이면 손대지 않는다 — 6점 전부가 이 대역 안에 있으므로 원래 씬은 그대로다.
+//
+// 보정식이 루마(0.3r+0.6g+0.1b)를 정확히 보존하는 덕에 둘은 독립이다:
+// 채도는 sat만, 밝기는 gain만 움직인다.
+
+/** 보정 후 평균 채도 대역 — 6점 실측 0.394(별밤)~0.776(해바라기) */
+const SAT_BAND: [number, number] = [0.39, 0.78];
+/** 보정 후 평균 밝기 대역 — 6점 실측 0.303(자화상)~0.697(해바라기) */
+const LUM_BAND: [number, number] = [0.3, 0.7];
+const SAT_LIMIT: [number, number] = [0.55, 2.4];
+const GAIN_LIMIT: [number, number] = [0.7, 1.6];
+
+export const DEFAULT_SAT = 1.28;
+export const DEFAULT_GAIN = 1.07;
+
+/** sat을 먹인 뒤의 평균 HSV 채도 — sat에 대해 단조증가한다 */
+function meanSat(rgb: Uint8Array, n: number, sat: number): number {
+  let sum = 0;
+  for (let i = 0; i < n; i++) {
+    const r = rgb[i * 3];
+    const g = rgb[i * 3 + 1];
+    const b = rgb[i * 3 + 2];
+    const l = r * 0.3 + g * 0.6 + b * 0.1;
+    const cr = l + (r - l) * sat;
+    const cg = l + (g - l) * sat;
+    const cb = l + (b - l) * sat;
+    const mx = Math.max(cr, cg, cb);
+    const mn = Math.min(cr, cg, cb);
+    if (mx > 1) sum += (mx - mn) / mx;
+  }
+  return sum / n;
+}
+
+/** 평균 채도가 target이 되는 sat을 찾는다 (단조증가라 이분탐색) */
+function solveSat(rgb: Uint8Array, n: number, target: number): number {
+  let lo = SAT_LIMIT[0];
+  let hi = SAT_LIMIT[1];
+  if (meanSat(rgb, n, hi) < target) return hi;
+  if (meanSat(rgb, n, lo) > target) return lo;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (meanSat(rgb, n, mid) < target) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
+/**
+ * 임의의 이미지에 맞는 sat/gain을 고른다.
+ * 대역 안이면 기본값을 그대로 돌려주므로, 회화 6점에는 아무 영향이 없다.
+ */
+export function autoTone(d: PaintingData): { sat: number; gain: number } {
+  const n = d.w * d.h;
+
+  let sat = DEFAULT_SAT;
+  const s = meanSat(d.rgb, n, DEFAULT_SAT);
+  if (s < SAT_BAND[0]) sat = solveSat(d.rgb, n, SAT_BAND[0]);
+  else if (s > SAT_BAND[1]) sat = solveSat(d.rgb, n, SAT_BAND[1]);
+
+  // 밝기는 gain에 정확히 비례한다 — 탐색이 필요 없다
+  let lumSum = 0;
+  for (let i = 0; i < n; i++) {
+    lumSum +=
+      d.rgb[i * 3] * 0.3 + d.rgb[i * 3 + 1] * 0.6 + d.rgb[i * 3 + 2] * 0.1;
+  }
+  const lum = lumSum / n / 255;
+  let gain = DEFAULT_GAIN;
+  if (lum * gain < LUM_BAND[0]) gain = LUM_BAND[0] / lum;
+  else if (lum * gain > LUM_BAND[1]) gain = LUM_BAND[1] / lum;
+  gain = Math.min(GAIN_LIMIT[1], Math.max(GAIN_LIMIT[0], gain));
+
+  return { sat, gain };
+}
+
 /** 종횡비를 유지하며 최대 변을 maxDim으로 맞춘 색상 맵 크기 */
 export function colorMapSize(
   w: number,
