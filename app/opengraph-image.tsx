@@ -6,7 +6,7 @@ import copy from "@/lib/ogCopy.json";
 import { baseWorks } from "@/lib/scenes";
 
 export const alt =
-  "Impastile — 반 고흐 '별이 빛나는 밤에'를 방향성 임파스토 붓터치로 재현한 타일 모자이크";
+  "Impastile — 반 고흐 '별이 빛나는 밤에'를 방향성 임파스토 붓터치로 다시 그린 화면";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

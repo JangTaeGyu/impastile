@@ -7,9 +7,9 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const TITLE = "Impastile — Van Gogh · Tile Mosaic";
+const TITLE = "Impastile — Van Gogh · Directional Impasto";
 const DESCRIPTION =
-  "빈센트 반 고흐의 에센스를 임파스토 타일 모자이크로 짜내는 텍스트 갤러리";
+  "빈센트 반 고흐의 회화를 원화가 실제로 그어진 붓결 방향을 따라 임파스토 붓터치 하나하나로 다시 그리는 웹 갤러리";
 
 // og:image 등 절대 URL의 기준. 배포 도메인이 기본값이고,
 // 프리뷰·로컬에서 다른 주소를 쓰려면 NEXT_PUBLIC_SITE_URL로 덮는다.
