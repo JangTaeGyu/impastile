@@ -105,14 +105,20 @@ export default function Gallery() {
     [go],
   );
 
-  // 첫 작품부터 받고, 자리를 잡은 뒤 나머지를 한 점씩 따라 받는다.
-  // 썸네일 때문에 결국 전부 필요하지만, 첫 화면이 900KB를 기다리지는 않는다.
+  // 첫 작품부터 받는다. 나머지는 아래에서 전시관 단위로 따라온다.
+  useEffect(() => {
+    go(0);
+  }, [go]);
+
+  // 띠의 썸네일은 결국 데이터를 봐야 구울 수 있다. 다만 필요한 것은 **지금 열린
+  // 전시관**뿐이다 — 마흔두 점을 한꺼번에 받으면 첫 화면 뒤로 3MB가 흐른다.
+  // 전시관을 옮길 때 그쪽을 받고, 받아둔 것은 loadWork의 캐시가 들고 있으므로
+  // 돌아올 때는 다시 받지 않는다. 아직 안 온 자리는 띠가 크기만 잡아둔다.
   useEffect(() => {
     let alive = true;
-    go(0);
     (async () => {
       await preloadWorks(
-        exhibits.flatMap((e) => e.works),
+        tab < exhibits.length ? exhibits[tab].works : mine,
         () => bumpLoaded((v) => v + 1),
         () => alive,
       );
@@ -120,7 +126,7 @@ export default function Gallery() {
     return () => {
       alive = false;
     };
-  }, [go]);
+  }, [tab, mine]);
 
   /** 고른 파일을 씬으로 만들어 나의 전시관에 담고 첫 장으로 넘어간다 */
   const addFiles = useCallback(
