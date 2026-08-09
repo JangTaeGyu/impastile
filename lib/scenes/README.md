@@ -11,11 +11,27 @@
   색상 맵(최대 변 144px RGB)과 붓결 방향장(배각 2θ 벡터, int8 x 2)을 담는다.
 - `<name>.ts` — 3줄짜리 래퍼. `paintingWork(data)`가 돌려주는
   `{ scene, flow, aspect }`를 그대로 export한다.
-- `index.ts` — `baseWorks` 레지스트리 (제목·셀 크기·scene·flow).
+- `index.ts` — `baseWorks` 레지스트리(제목·셀 크기·scene·flow·aspect)와
+  `exhibits` 전시관 목록. 하단 띠의 탭이 이 목록에서 나온다.
 - `extract.ts` — 추출기의 브라우저 판. 임의의 이미지에서 `PaintingData`를
   런타임에 만든다 (아래 참고).
 - `fromFile.ts` — 사용자가 올린 `File`을 `Work` 하나로 만든다. 추출 → `autoTone`
   → 씬 생성까지 묶은 3줄짜리 진입점. 업로드 UI는 `components/Gallery.tsx`.
+
+## 새 작가(전시관) 추가
+
+`exhibits`에 항목을 하나 더 넣으면 탭이 생긴다.
+
+```ts
+export const exhibits: Exhibit[] = [
+  { name: "빈센트 반 고흐 전시관", artist: ARTIST, works: baseWorks },
+  { name: "클로드 모네 전시관", artist: MONET, works: monetWorks },
+];
+```
+
+작품 정보 패널의 작가 줄은 그 작품이 속한 전시관의 `artist`에서 온다.
+사용자가 올린 이미지가 담기는 '나의 전시관'은 런타임에 만들어져 항상 뒤에 붙고,
+`artist`가 없어 작가 줄 대신 파일명만 보여준다.
 
 ## 새 작품 추가
 
@@ -111,6 +127,12 @@ const flow = paintingFlow(data);
 
 **씬에 넘어가는 `ar`은 화면이 아니라 그림 영역의 비율이다.** 비율을 지켜
 앉히면 둘이 다르다.
+
+여백은 비워두지 않는다. 결은 작품과 무관한 소용돌이가 그림을 감싸고 돌고,
+색은 그림 가장자리에서 이어받아 멀어질수록 바닥으로 잦아든다 (`renderer.ts`의
+`groundFlow`·`groundColor`). 결을 고정한 건 작품이 바뀌어도 바탕이 요동치지
+않게 하기 위해서고, 색을 이어받은 건 여백이 그림에서 번져 나온 것처럼 보이게
+하기 위해서다.
 
 ## 원리
 

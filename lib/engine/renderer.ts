@@ -14,12 +14,16 @@ export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
   0.35 * Math.sin(nx * 5 + ny * 3) + 0.2 * Math.sin(ny * 9 - nx * 4);
 
 // 비율을 지켜 앉히면 그림 옆에 여백이 남는다. 비워두면 화면이 끊겨 보여서
-// 바탕도 붓으로 칠한다 — 바닥보다 조금 밝은 남색 결이 그림을 감싸고 돈다.
-// 작품과 무관한 고정 결이라 작품이 바뀌어도 바탕은 고요하고, 전환 중에도
-// 양쪽 여백이 같아 한 번만 구하면 된다.
+// 바탕도 붓으로 칠한다.
+//
+// 결은 작품과 무관한 소용돌이가 그림을 감싸고 돈다 — 작품이 바뀌어도 바탕의
+// 흐름은 고요하다. 색은 반대로 작품에서 이어받는다: 그림 가장자리 색을 물고
+// 나가되 멀어질수록 바닥으로 잦아들어, 여백이 그림에서 번져 나온 것처럼 보인다.
 const GROUND_R = 17;
 const GROUND_G = 20;
 const GROUND_B = 36;
+/** 가장자리에서 작품 색을 얼마나 물고 나갈지 (0이면 무채색 바탕) */
+const GROUND_MIX = 0.2;
 
 /** 여백의 붓결 — 소용돌이 중심은 그림에 가려 보이지 않는다 */
 function groundFlow(sx: number, sy: number, t: number) {
@@ -27,6 +31,32 @@ function groundFlow(sx: number, sy: number, t: number) {
   const dy = sy - 0.5;
   const r = Math.sqrt(dx * dx + dy * dy);
   return Math.atan2(dy, dx) + Math.PI / 2 + 0.6 * Math.sin(r * 14 - t * 0.25);
+}
+
+/**
+ * 여백 한 셀의 색을 out에 쓴다.
+ * ux,uy는 그림 좌표라 밖에서는 0..1을 벗어나 있다 — 가장자리로 당겨 샘플링하고
+ * 벗어난 거리만큼 바닥색 쪽으로 되돌린다.
+ */
+function groundColor(
+  scene: Scene,
+  ux: number,
+  uy: number,
+  t: number,
+  ar: number,
+  out: [number, number, number],
+) {
+  const cx = ux < 0 ? 0 : ux > 1 ? 1 : ux;
+  const cy = uy < 0 ? 0 : uy > 1 ? 1 : uy;
+  const c = scene(cx, cy, t, ar);
+  const d = Math.max(
+    ux < 0 ? -ux : ux > 1 ? ux - 1 : 0,
+    uy < 0 ? -uy : uy > 1 ? uy - 1 : 0,
+  );
+  const k = GROUND_MIX / (1 + d * 5);
+  out[0] = GROUND_R + (c[0] - GROUND_R) * k;
+  out[1] = GROUND_G + (c[1] - GROUND_G) * k;
+  out[2] = GROUND_B + (c[2] - GROUND_B) * k;
 }
 
 /**
@@ -51,6 +81,9 @@ export class MosaicRenderer {
   private raf = 0;
   private running = false;
   private dpr = 1;
+  // 셀마다 새로 만들지 않도록 미리 잡아둔다 (프레임당 약 1만 회)
+  private gPrev: [number, number, number] = [0, 0, 0];
+  private gCur: [number, number, number] = [0, 0, 0];
 
   constructor(
     private cv: HTMLCanvasElement,
@@ -164,20 +197,22 @@ export class MosaicRenderer {
             bb = c[2];
             a = this.curFlow(ux, uy, PT, curAr);
           } else {
-            rr = GROUND_R;
-            gg = GROUND_G;
-            bb = GROUND_B;
+            const g = this.gCur;
+            groundColor(this.curScene, ux, uy, PT, curAr, g);
+            rr = g[0];
+            gg = g[1];
+            bb = g[2];
             a = groundFlow(sx, sy, PT);
           }
         } else {
           const vx = (sx - pf.x) / pf.w;
           const vy = (sy - pf.y) / pf.h;
           const inPrev = vx >= 0 && vx <= 1 && vy >= 0 && vy <= 1;
-          // 양쪽 여백은 같은 바탕이라 한 번만 구한다
+          // 결은 작품과 무관하니 양쪽이 같다 — 색만 각자 구한다
           const ga = inPrev && inCur ? 0 : groundFlow(sx, sy, PT);
-          let pr = GROUND_R;
-          let pg = GROUND_G;
-          let pb = GROUND_B;
+          let pr: number;
+          let pg: number;
+          let pb: number;
           let a0 = ga;
           if (inPrev) {
             const p = this.prevScene(vx, vy, PT, prevAr);
@@ -185,10 +220,16 @@ export class MosaicRenderer {
             pg = p[1];
             pb = p[2];
             a0 = this.prevFlow(vx, vy, PT, prevAr);
+          } else {
+            const g = this.gPrev;
+            groundColor(this.prevScene, vx, vy, PT, prevAr, g);
+            pr = g[0];
+            pg = g[1];
+            pb = g[2];
           }
-          let qr = GROUND_R;
-          let qg = GROUND_G;
-          let qb = GROUND_B;
+          let qr: number;
+          let qg: number;
+          let qb: number;
           let a1 = ga;
           if (inCur) {
             const q = this.curScene(ux, uy, PT, curAr);
@@ -196,6 +237,12 @@ export class MosaicRenderer {
             qg = q[1];
             qb = q[2];
             a1 = this.curFlow(ux, uy, PT, curAr);
+          } else {
+            const g = this.gCur;
+            groundColor(this.curScene, ux, uy, PT, curAr, g);
+            qr = g[0];
+            qg = g[1];
+            qb = g[2];
           }
           rr = lerp(pr, qr, m);
           gg = lerp(pg, qg, m);

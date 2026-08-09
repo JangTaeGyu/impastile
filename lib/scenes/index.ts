@@ -6,7 +6,27 @@ import { starryNight } from "./starryNight";
 import { sunflowers } from "./sunflowers";
 import { wheatField } from "./wheatField";
 
-export const ARTIST = {
+export interface Artist {
+  ko: string;
+  en: string;
+  era: string;
+  movement: string;
+}
+
+/**
+ * 전시관 하나 — 탭 하나에 대응한다.
+ * 작가를 추가할 때는 씬 파일을 만들고 여기에 전시관을 하나 더 밀어 넣으면 된다.
+ * 사용자가 올린 이미지를 담는 '나의 전시관'은 런타임에 만들어져 뒤에 붙는다.
+ */
+export interface Exhibit {
+  /** 탭에 그대로 뜬다 */
+  name: string;
+  /** 없으면 작품 정보 패널에서 작가 줄을 뺀다 (나의 전시관) */
+  artist?: Artist;
+  works: Work[];
+}
+
+export const ARTIST: Artist = {
   ko: "빈센트 반 고흐",
   en: "Vincent van Gogh",
   era: "1853–1890",
@@ -57,3 +77,11 @@ export const baseWorks: Work[] = [
     ...wheatField,
   },
 ];
+
+/** 전시관 목록. 작가가 늘면 여기에 추가한다. */
+export const exhibits: Exhibit[] = [
+  { name: "빈센트 반 고흐 전시관", artist: ARTIST, works: baseWorks },
+];
+
+/** 사용자가 올린 이미지가 담기는 전시관 이름 */
+export const MY_EXHIBIT = "나의 전시관";
