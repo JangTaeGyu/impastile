@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
+import Actions from "./Actions";
 import FactureCanvas from "./FactureCanvas";
 import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
 import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
@@ -258,7 +259,10 @@ export default function Gallery() {
       <div className="scrim" />
 
       <div className="ui">
-        <Logo href="/about" />
+        <div className="topbar">
+          <Logo />
+          <Actions title={shown?.work.title} />
+        </div>
         <div className="panel">
           {shown && (
             <div className={`fade${fading ? " out" : ""}`}>

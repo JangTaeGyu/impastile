@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** href를 주면 로고 자체가 진입점이 된다 — 새 버튼을 늘리지 않으려는 쪽이다 */
+/** href를 주면 로고 자체가 링크가 된다 (/about에서 갤러리로 돌아가는 길) */
 export default function Logo({ href }: { href?: string }) {
   const mark = (
     <>

@@ -29,12 +29,17 @@ canvas.facture {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  /* UI가 놓이는 모서리(좌상단 로고·우측 패널·우하단 네비)만 눌러
+  /* UI가 놓이는 모서리(좌상단 로고·우상단 아이콘·우측 패널·우하단 네비)만 눌러
      밝은 작품에서도 글자가 읽히게 한다 — 화면 중앙 그림은 건드리지 않는다 */
   background:
     radial-gradient(
       ellipse 460px 240px at 0% 0%,
       rgba(7, 10, 24, 0.78),
+      transparent 72%
+    ),
+    radial-gradient(
+      ellipse 300px 190px at 100% 0%,
+      rgba(7, 10, 24, 0.68),
       transparent 72%
     ),
     radial-gradient(
@@ -66,6 +71,19 @@ canvas.facture {
   pointer-events: auto;
 }
 
+/* 상단 줄 — 왼쪽 로고, 오른쪽 아이콘. 줄 자체는 클릭을 먹지 않는다
+   (화면을 가로지르므로 통째로 auto면 그림 위 드래그·클릭을 가로챈다) */
+.ui > .topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  pointer-events: none;
+}
+.topbar > * {
+  pointer-events: auto;
+}
+
 .brand {
   align-self: flex-start;
   display: flex;
@@ -88,7 +106,6 @@ canvas.facture {
   color: #f2c14e;
   font-weight: 800;
 }
-/* 로고가 엔진 소개로 가는 진입점이다 — 화면에는 로고 하나로 남는다 */
 .brand-link {
   text-decoration: none;
   color: inherit;
@@ -96,6 +113,63 @@ canvas.facture {
 .brand-link:hover .brand-word,
 .brand-link:focus-visible .brand-word {
   color: #f2c14e;
+}
+
+/* 소개·링크 복사·공유 — 하단 네비(.arrow)와 같은 옷을 입되 한 치수 작다 */
+.actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(246, 243, 232, 0.22);
+  border-radius: 8px;
+  background: rgba(18, 16, 30, 0.4);
+  backdrop-filter: blur(8px);
+  color: #f6f3e8;
+  cursor: pointer;
+  transition:
+    color 0.3s,
+    border-color 0.3s;
+}
+.icon svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.icon:hover,
+.icon:focus-visible {
+  border-color: #f2c14e;
+  color: #f2c14e;
+}
+/* 복사·공유 결과를 누른 자리 바로 아래에서 잠깐 알린다 */
+.actions-note {
+  position: absolute;
+  top: 100%;
+  right: 2px;
+  margin-top: 10px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: #9aa0c0;
+  white-space: nowrap;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+/* 아이콘만 보이지만 읽어주는 쪽에는 이름이 있어야 한다 */
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .panel {
