@@ -13,6 +13,22 @@ const MAX_DT = 0.25; // 스로틀·탭 복귀 시 시간 점프 상한 (s)
 export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
   0.35 * Math.sin(nx * 5 + ny * 3) + 0.2 * Math.sin(ny * 9 - nx * 4);
 
+// 비율을 지켜 앉히면 그림 옆에 여백이 남는다. 비워두면 화면이 끊겨 보여서
+// 바탕도 붓으로 칠한다 — 바닥보다 조금 밝은 남색 결이 그림을 감싸고 돈다.
+// 작품과 무관한 고정 결이라 작품이 바뀌어도 바탕은 고요하고, 전환 중에도
+// 양쪽 여백이 같아 한 번만 구하면 된다.
+const GROUND_R = 17;
+const GROUND_G = 20;
+const GROUND_B = 36;
+
+/** 여백의 붓결 — 소용돌이 중심은 그림에 가려 보이지 않는다 */
+function groundFlow(sx: number, sy: number, t: number) {
+  const dx = sx - 0.5;
+  const dy = sy - 0.5;
+  const r = Math.sqrt(dx * dx + dy * dy);
+  return Math.atan2(dy, dx) + Math.PI / 2 + 0.6 * Math.sin(r * 14 - t * 0.25);
+}
+
 /**
  * 임파스토 붓터치 렌더러.
  * 매 프레임 화면을 셀 그리드로 나누고 셀 중심마다 scene 색과 flow 방향을
@@ -36,7 +52,10 @@ export class MosaicRenderer {
   private running = false;
   private dpr = 1;
 
-  constructor(private cv: HTMLCanvasElement, initial: Work) {
+  constructor(
+    private cv: HTMLCanvasElement,
+    initial: Work,
+  ) {
     const ctx = cv.getContext("2d");
     if (!ctx) throw new Error("2d context unavailable");
     this.ctx = ctx;
@@ -55,6 +74,9 @@ export class MosaicRenderer {
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
     this.cv.width = Math.round(innerWidth * this.dpr);
     this.cv.height = Math.round(innerHeight * this.dpr);
+    // 크기를 바꾸면 캔버스가 지워진다. 멈춘 상태(탭이 숨겨진 동안)라면
+    // 다음 프레임이 오지 않으므로 여기서 한 장 다시 그려둔다.
+    this.draw();
   };
 
   /** 새 작품으로 크로스페이드 전환 */
@@ -90,10 +112,15 @@ export class MosaicRenderer {
       : 1 / 60;
     this.lastNow = now;
     this.t += dt;
-    const PT = this.t;
     if (this.mixT < 1) this.mixT = Math.min(1, this.mixT + MIX_RATE * dt);
     this.cell = lerp(this.cell, this.targetCell, 1 - Math.pow(0.002, dt));
+    this.draw();
+    this.raf = requestAnimationFrame(this.frame);
+  };
 
+  /** 한 장 그린다. 시간을 건드리지 않으므로 멈춘 상태에서도 부를 수 있다 */
+  private draw() {
+    const PT = this.t;
     const { ctx, dpr } = this;
     const W = innerWidth;
     const H = innerHeight;
@@ -130,22 +157,28 @@ export class MosaicRenderer {
         let bb: number;
         let a: number;
         if (!fading) {
-          if (!inCur) continue;
-          const c = this.curScene(ux, uy, PT, curAr);
-          rr = c[0];
-          gg = c[1];
-          bb = c[2];
-          a = this.curFlow(ux, uy, PT, curAr);
+          if (inCur) {
+            const c = this.curScene(ux, uy, PT, curAr);
+            rr = c[0];
+            gg = c[1];
+            bb = c[2];
+            a = this.curFlow(ux, uy, PT, curAr);
+          } else {
+            rr = GROUND_R;
+            gg = GROUND_G;
+            bb = GROUND_B;
+            a = groundFlow(sx, sy, PT);
+          }
         } else {
           const vx = (sx - pf.x) / pf.w;
           const vy = (sy - pf.y) / pf.h;
           const inPrev = vx >= 0 && vx <= 1 && vy >= 0 && vy <= 1;
-          if (!inCur && !inPrev) continue;
-          // 그림 밖은 바닥색으로 쳐서 여백이 자연스럽게 열리고 닫힌다
-          let pr = BG_R;
-          let pg = BG_G;
-          let pb = BG_B;
-          let a0 = 0;
+          // 양쪽 여백은 같은 바탕이라 한 번만 구한다
+          const ga = inPrev && inCur ? 0 : groundFlow(sx, sy, PT);
+          let pr = GROUND_R;
+          let pg = GROUND_G;
+          let pb = GROUND_B;
+          let a0 = ga;
           if (inPrev) {
             const p = this.prevScene(vx, vy, PT, prevAr);
             pr = p[0];
@@ -153,10 +186,10 @@ export class MosaicRenderer {
             pb = p[2];
             a0 = this.prevFlow(vx, vy, PT, prevAr);
           }
-          let qr = BG_R;
-          let qg = BG_G;
-          let qb = BG_B;
-          let a1 = 0;
+          let qr = GROUND_R;
+          let qg = GROUND_G;
+          let qb = GROUND_B;
+          let a1 = ga;
           if (inCur) {
             const q = this.curScene(ux, uy, PT, curAr);
             qr = q[0];
@@ -167,16 +200,11 @@ export class MosaicRenderer {
           rr = lerp(pr, qr, m);
           gg = lerp(pg, qg, m);
           bb = lerp(pb, qb, m);
-          // 한쪽에만 그림이 있으면 그쪽 결을 그대로 쓴다.
-          // 둘 다면 방향은 벡터로 보간 — 각도 뜀 없이 섞인다
-          a = !inPrev
-            ? a1
-            : !inCur
-              ? a0
-              : Math.atan2(
-                  lerp(Math.sin(a0), Math.sin(a1), m),
-                  lerp(Math.cos(a0), Math.cos(a1), m),
-                );
+          // 방향은 벡터로 보간 — 각도 뜀 없이 섞인다
+          a = Math.atan2(
+            lerp(Math.sin(a0), Math.sin(a1), m),
+            lerp(Math.cos(a0), Math.cos(a1), m),
+          );
         }
         // 임파스토: 셀별 붓값 + 밝은 셀 블룸 + 미세한 숨결
         const lum = (rr * 0.3 + gg * 0.6 + bb * 0.1) / 255;
@@ -214,6 +242,5 @@ export class MosaicRenderer {
       }
     }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    this.raf = requestAnimationFrame(this.frame);
-  };
+  }
 }
