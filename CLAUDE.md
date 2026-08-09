@@ -30,6 +30,9 @@ npm run lint     # ESLint
 
 - **`<작품>Data.ts`는 자동 생성 파일이다.** 직접 편집하지 말고
   `scripts/extract-painting.py`를 다시 돌린다 (pillow·numpy 필요, venv 권장).
+- **추출기는 두 벌이다.** 위 파이썬 스크립트와 `lib/scenes/extract.ts`(브라우저
+  런타임 판)는 같은 결과를 내야 한다. 한쪽을 고치면 다른 쪽도 고치고,
+  `scripts/verify-extract.mjs`로 대조한다. 자세한 건 `lib/scenes/README.md`.
 - **`assets/og/*.woff`도 자동 생성이다.** OG 카드 문구는 `lib/ogCopy.json`에만 두고,
   고친 뒤 `node scripts/fetch-og-font.mjs`로 서브셋을 다시 굽는다. 이걸 빠뜨리면
   새 글자가 카드에서 두부(□)로 나온다. next/og 기본 폰트에는 한글이 없다.

@@ -11,6 +11,8 @@
   색상 맵(최대 변 144px RGB)과 붓결 방향장(배각 2θ 벡터, int8 x 2)을 담는다.
 - `<name>.ts` — 3줄짜리 래퍼. `paintingScene(data)` / `paintingFlow(data)` export.
 - `index.ts` — `baseWorks` 레지스트리 (제목·셀 크기·scene·flow).
+- `extract.ts` — 추출기의 브라우저 판. 임의의 이미지에서 `PaintingData`를
+  런타임에 만든다 (아래 참고).
 
 ## 새 작품 추가
 
@@ -22,6 +24,35 @@
 3. `xxx.ts` 래퍼를 만들고 `index.ts`의 `baseWorks`에 등록한다.
 4. **`SOURCES.md`에 출처(Commons 파일명)와 크롭 값을 적는다.** 이걸 빠뜨리면
    나중에 색상 맵을 후보 파일과 대조해 역산해야 한다.
+
+## 추출기가 둘인 이유
+
+같은 파이프라인의 구현이 두 벌 있다.
+
+| | `scripts/extract-painting.py` | `lib/scenes/extract.ts` |
+| --- | --- | --- |
+| 언제 | 빌드 전, 손으로 한 번 | 런타임, 브라우저에서 |
+| 입력 | 원화 파일 | 임의의 이미지 |
+| 출력 | `<name>Data.ts` (base64) | 메모리의 `PaintingData` |
+
+전시용 6점은 파이썬 판으로 구운 데이터를 번들에 넣는다 — 매번 뽑을 이유가 없다.
+사용자가 가져온 이미지는 TS 판이 그 자리에서 처리한다 (서버로 나가지 않는다).
+
+**한쪽을 고치면 다른 쪽도 고친다.** 어긋나지 않았는지는 대조해서 확인한다:
+
+```bash
+python scripts/extract-painting.py --src img.jpg --out /tmp/x.ts --dump /tmp/d
+node scripts/verify-extract.mjs /tmp/d
+```
+
+같은 휘도 버퍼를 양쪽에 먹여 방향장을 바이트 단위로 비교한다. 색상 맵은
+비교하지 않는다 — 파이썬은 LANCZOS, 브라우저는 캔버스 리샘플러라 애초에 다르다.
+이식 위험이 있는 곳은 구조 텐서 쪽이다.
+
+리사이즈는 한 단계에 최대 절반씩만 줄인다. 3배를 한 번에 줄이면 캔버스 필터가
+원본을 듬성듬성 집어 계단현상이 남고, 그래디언트를 먹고 사는 방향장이 그걸
+가짜 결로 바꿔놓는다 (실측: 별이 빛나는 밤에서 파이썬과의 방향 일치도가
+0.977 → 0.993).
 
 ## 원리
 

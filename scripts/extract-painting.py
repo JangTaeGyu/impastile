@@ -36,6 +36,10 @@ def main():
     ap.add_argument("--src", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--crop", default="0,0,0,0", help="top,right,bottom,left 비율")
+    ap.add_argument(
+        "--dump",
+        help="중간 버퍼를 이 디렉터리에 raw로 떨군다 (scripts/verify-extract.mjs 전용)",
+    )
     args = ap.parse_args()
 
     ct, cr, cb, cl = (float(v) for v in args.crop.split(","))
@@ -58,7 +62,8 @@ def main():
 
     # ---- 방향장: 구조 텐서 ----
     work = img.resize((WORK_W, max(2, int(WORK_W * h1 / w1))), Image.LANCZOS)
-    L = gauss(np.asarray(work.convert("L"), dtype=np.float64), 1.2)
+    lum = np.asarray(work.convert("L"), dtype=np.float64)
+    L = gauss(lum, 1.2)
     gy, gx = np.gradient(L)
     Jxx, Jyy, Jxy = gauss(gx * gx, 5.0), gauss(gy * gy, 5.0), gauss(gx * gy, 5.0)
 
@@ -77,6 +82,23 @@ def main():
     cq = np.clip(np.round(c2d * 127), -127, 127).astype(np.int8)
     sq = np.clip(np.round(s2d * 127), -127, 127).astype(np.int8)
     flow_b64 = base64.b64encode(cq.tobytes() + sq.tobytes()).decode()
+
+    # TS 판(lib/scenes/extract.ts)과 대조하기 위한 중간 버퍼 덤프.
+    # 휘도 버퍼를 넘겨줘야 리사이즈 알고리즘 차이(LANCZOS vs 캔버스)를 빼고
+    # 구조 텐서 계산만 비교할 수 있다.
+    if args.dump:
+        import json
+        import os
+
+        os.makedirs(args.dump, exist_ok=True)
+        lum.tofile(os.path.join(args.dump, "lum.f64"))
+        with open(os.path.join(args.dump, "flow.i8"), "wb") as f:
+            f.write(cq.tobytes() + sq.tobytes())
+        with open(os.path.join(args.dump, "meta.json"), "w") as f:
+            json.dump(
+                {"lw": lum.shape[1], "lh": lum.shape[0], "w": W, "h": H}, f
+            )
+        print(f"dump: {args.dump} (lum {lum.shape[1]}x{lum.shape[0]})")
 
     def chunk(s, n=100):
         return "\n".join(f'  "{s[i:i+n]}" +' for i in range(0, len(s), n)).rstrip("+").rstrip()
