@@ -1,6 +1,9 @@
-export default function Logo() {
-  return (
-    <div className="brand">
+import Link from "next/link";
+
+/** href를 주면 로고 자체가 진입점이 된다 — 새 버튼을 늘리지 않으려는 쪽이다 */
+export default function Logo({ href }: { href?: string }) {
+  const mark = (
+    <>
       <svg
         className="brand-mark"
         viewBox="0 0 32 32"
@@ -32,6 +35,13 @@ export default function Logo() {
       <span className="brand-word">
         IMPAS<b>TILE</b>
       </span>
-    </div>
+    </>
+  );
+
+  if (!href) return <div className="brand">{mark}</div>;
+  return (
+    <Link className="brand brand-link" href={href}>
+      {mark}
+    </Link>
   );
 }

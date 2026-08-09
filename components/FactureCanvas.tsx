@@ -4,7 +4,17 @@ import { useEffect, useRef } from "react";
 import { FactureRenderer } from "@/lib/facture/renderer";
 import type { Work } from "@/lib/facture/types";
 
-export default function FactureCanvas({ work }: { work: Work }) {
+export default function FactureCanvas({
+  work,
+  className = "facture",
+  still = false,
+}: {
+  work: Work;
+  /** 기본은 화면을 덮는 갤러리 캔버스. 문서 안에 끼울 때 바꾼다 */
+  className?: string;
+  /** 애니메이션 없이 한 장만 그린다 (prefers-reduced-motion) */
+  still?: boolean;
+}) {
   const cvRef = useRef<HTMLCanvasElement>(null);
   const rendererRef = useRef<FactureRenderer | null>(null);
   // 재마운트(개발 중 Fast Refresh 포함) 시에도 최초 작품이 아니라
@@ -21,24 +31,40 @@ export default function FactureCanvas({ work }: { work: Work }) {
     if (!cv) return;
     const rd = new FactureRenderer(cv, workRef.current);
     rendererRef.current = rd;
-    rd.start();
 
-    const onVis = () => (document.hidden ? rd.stop() : rd.start());
+    // 보이는 동안에만 돈다. 화면을 덮는 갤러리 캔버스는 늘 교차하므로 계속 돌고,
+    // 문서 안에 끼운 캔버스는 스크롤로 밀려나면 멈춘다.
+    let onScreen = true;
+    const sync = () => {
+      if (still) return;
+      if (onScreen && !document.hidden) rd.start();
+      else rd.stop();
+    };
 
-    addEventListener("resize", rd.resize);
-    document.addEventListener("visibilitychange", onVis);
+    // 창 크기가 아니라 캔버스 상자를 본다 — 창이 그대로여도 레이아웃이 바뀌면 온다
+    const ro = new ResizeObserver(rd.resize);
+    ro.observe(cv);
+    const io = new IntersectionObserver((entries) => {
+      onScreen = entries[entries.length - 1].isIntersecting;
+      sync();
+    });
+    io.observe(cv);
+    document.addEventListener("visibilitychange", sync);
+    sync();
+
     return () => {
       rd.stop();
-      removeEventListener("resize", rd.resize);
-      document.removeEventListener("visibilitychange", onVis);
+      ro.disconnect();
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
       rendererRef.current = null;
     };
-  }, []);
+  }, [still]);
 
   // 작품이 바뀌면 크로스페이드 전환 (같은 씬으로의 전환은 시각적으로 무해)
   useEffect(() => {
     rendererRef.current?.transitionTo(work);
   }, [work]);
 
-  return <canvas ref={cvRef} className="facture" aria-hidden />;
+  return <canvas ref={cvRef} className={className} aria-hidden />;
 }

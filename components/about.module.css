@@ -1,0 +1,454 @@
+/* Facture 소개 문서.
+   갤러리와 같은 팔레트를 쓰되 읽는 화면이라 규칙이 몇 가지 다르다 —
+   body가 overflow:hidden이므로 문서가 제 스크롤 상자를 만들고,
+   전역 h1/커서 같은 갤러리용 규칙을 여기서 되돌린다. */
+
+.doc {
+  --ink: #f6f3e8;
+  --body: #cdc9bb;
+  --dim: #8f95b4;
+  --gold: #f2c14e;
+  --ground: #070a18;
+  --panel: #0d1226;
+  --line: rgba(246, 243, 232, 0.13);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+
+  position: fixed;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--ground);
+  color: var(--body);
+  cursor: auto;
+}
+
+/* ---- 상단 바 ---- */
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 40px;
+  background: rgba(7, 10, 24, 0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.back {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.25s;
+}
+.back:hover,
+.back:focus-visible {
+  color: var(--gold);
+}
+
+/* ---- 히어로 ---- */
+
+.hero {
+  position: relative;
+  height: min(72vh, 680px);
+  min-height: 400px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+}
+.heroText {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  padding: 96px 0 32px;
+  pointer-events: none;
+  background: linear-gradient(
+    0deg,
+    rgba(5, 7, 18, 0.9),
+    rgba(5, 7, 18, 0.5) 46%,
+    transparent
+  );
+}
+/* 본문의 .wrap과 같은 상자여야 제목과 첫 문단의 왼쪽 끝이 맞는다 */
+.heroInner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--gold);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85);
+}
+.doc .title {
+  margin-top: 10px;
+  font-size: clamp(52px, 9vw, 108px);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  color: var(--ink);
+  text-shadow: 0 2px 34px rgba(0, 0, 0, 0.8);
+}
+
+/* ---- 와이프: 이 문서의 논지 ----
+   같은 그림을 두 번 그려 겹친다. 색도 스트로크 위치도 같고 각도만 다르다 —
+   위 캔버스는 방향을 버린 판(flow ≡ 0), 아래는 원화의 방향장. */
+
+.wipeStack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.wipeCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.wipeRange {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  appearance: none;
+  background: transparent;
+  cursor: ew-resize;
+}
+.wipeRange::-webkit-slider-thumb {
+  appearance: none;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: transparent;
+}
+.wipeRange::-moz-range-thumb {
+  width: 52px;
+  height: 52px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+}
+.seam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 9;
+  width: 1px;
+  background: var(--gold);
+  box-shadow: 0 0 22px rgba(242, 193, 78, 0.55);
+  pointer-events: none;
+}
+.seamDot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--gold);
+  background: rgba(7, 10, 24, 0.55);
+  backdrop-filter: blur(7px);
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  color: var(--gold);
+}
+/* 기본 링은 히어로 전체를 두르니 끄고, 표시는 이음매 손잡이에 준다 */
+.wipeRange:focus-visible {
+  outline: none;
+}
+.wipeRange:focus-visible ~ .seam .seamDot {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.tag {
+  position: absolute;
+  top: 20px;
+  z-index: 7;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+.tagL {
+  left: 24px;
+  opacity: 0.62;
+}
+.tagR {
+  right: 24px;
+  color: var(--gold);
+}
+
+/* ---- 본문 격자 ----
+   왼쪽 여백에 구획 이름, 오른쪽에 글. 그림·표는 왼쪽 열까지 밀고 나온다. */
+
+.wrap {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.lead {
+  margin: 56px 0 0;
+  font-size: 19px;
+  line-height: 1.75;
+  color: var(--ink);
+  max-width: 44ch;
+}
+.leadNote {
+  margin-top: 18px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--dim);
+  max-width: 52ch;
+}
+
+.section {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  gap: 0 52px;
+  padding: 76px 0;
+  border-top: 1px solid var(--line);
+}
+.label {
+  align-self: start;
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: right;
+  padding-top: 9px;
+}
+.col {
+  min-width: 0;
+}
+.doc h2 {
+  font-size: 29px;
+  font-weight: 700;
+  line-height: 1.28;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.doc h3 {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.doc p {
+  margin-top: 14px;
+  font-size: 15.5px;
+  line-height: 1.85;
+  max-width: 64ch;
+}
+.doc b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.doc code {
+  font-family: var(--mono);
+  font-size: 0.88em;
+  color: var(--gold);
+}
+
+/* ---- 규칙 셋: 순서가 아니라 동시에 성립하는 것들이라 번호를 붙이지 않는다 ---- */
+
+.rules {
+  margin-top: 34px;
+  display: grid;
+  gap: 30px;
+}
+.rule {
+  padding-left: 22px;
+  border-left: 2px solid var(--gold);
+}
+.aside {
+  margin-top: 40px;
+  padding: 26px 28px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.aside h3 {
+  font-size: 15px;
+}
+
+/* ---- 단계: 이쪽은 진짜 순서다 ---- */
+
+.steps {
+  margin-top: 34px;
+  display: grid;
+  gap: 52px;
+}
+.stepNo {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+
+/* ---- 그림 ---- */
+
+.fig {
+  margin: 30px 0 0;
+}
+/* 왼쪽 구획 이름 열까지 밀고 나온다 (116px 열 + 52px 간격) */
+.figFull {
+  margin-left: -168px;
+}
+.figBox {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.figCap {
+  margin-top: 12px;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: var(--dim);
+}
+/* 높이는 aspect-ratio가 정한다 (FlowTicks가 원본 비율을 넣는다) */
+.ticks {
+  display: block;
+  width: 100%;
+}
+.diagram {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---- 코드 ---- */
+
+.code {
+  margin-top: 22px;
+  padding: 20px 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.95;
+  color: var(--body);
+  white-space: pre;
+}
+.code b {
+  color: var(--gold);
+  font-weight: 400;
+}
+.code i {
+  color: var(--dim);
+  font-style: normal;
+}
+
+/* ---- 숫자표 ---- */
+
+.numbers {
+  margin-top: 26px;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.numbers th {
+  padding: 0 0 10px;
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  border-bottom: 1px solid var(--line);
+}
+.numbers td {
+  padding: 13px 0;
+  border-bottom: 1px solid var(--line);
+  vertical-align: baseline;
+}
+.numbers td:first-child {
+  color: var(--ink);
+  padding-right: 24px;
+}
+.numbers td:last-child {
+  font-family: var(--mono);
+  color: var(--gold);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* ---- 꼬리 ---- */
+
+.foot {
+  border-top: 1px solid var(--line);
+  padding: 54px 0 96px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--dim);
+}
+.foot a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 1px solid var(--line);
+  transition: border-color 0.25s;
+}
+.foot a:hover,
+.foot a:focus-visible {
+  border-color: var(--gold);
+}
+
+/* 데이터가 오기 전 히어로 자리 — 도착해도 높이가 흔들리지 않는다 */
+.wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+@media (max-width: 780px) {
+  .bar,
+  .heroText {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .hero {
+    height: 52vh;
+  }
+  .wrap {
+    padding: 0 20px;
+  }
+  .section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+    padding: 56px 0;
+  }
+  .label {
+    text-align: left;
+    padding-top: 0;
+  }
+  .figFull {
+    margin-left: 0;
+  }
+  .tag {
+    top: 14px;
+  }
+}

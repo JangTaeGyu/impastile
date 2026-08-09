@@ -88,6 +88,15 @@ canvas.facture {
   color: #f2c14e;
   font-weight: 800;
 }
+/* 로고가 엔진 소개로 가는 진입점이다 — 화면에는 로고 하나로 남는다 */
+.brand-link {
+  text-decoration: none;
+  color: inherit;
+}
+.brand-link:hover .brand-word,
+.brand-link:focus-visible .brand-word {
+  color: #f2c14e;
+}
 
 .panel {
   align-self: flex-end;
@@ -201,7 +210,7 @@ h1 {
   text-shadow: 0 1px 12px rgba(0, 0, 0, 0.85);
 }
 
-/* 작품 띠 — 썸네일도 본 화면과 같은 모자이크로 굽는다 (셀만 4px) */
+/* 작품 띠 — 썸네일도 본 화면과 같은 붓결로 굽는다 (셀만 4px) */
 .rail {
   position: fixed;
   left: 0;

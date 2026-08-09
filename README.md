@@ -88,6 +88,7 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 app/
   layout.tsx          메타데이터(OG/트위터 카드 포함), 폰트
   page.tsx            갤러리 페이지 (서버 컴포넌트 셸)
+  about/page.tsx      Facture 소개 — 그림 스타일과 엔진 구조 (로고에서 들어간다)
   opengraph-image.tsx 공유 카드 이미지 (빌드 시 1회 생성)
   icon.svg            파비콘
   globals.css         전역 스타일
@@ -95,7 +96,11 @@ assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
 components/
   Gallery.tsx         작품 전환 상태, 정보 패널, 전시관 탭·썸네일 띠, 업로드
   FactureCanvas.tsx   캔버스 + rAF 루프 수명 관리
-  Logo.tsx            브랜드 마크
+  AboutDoc.tsx        /about 본문
+  FactureWipe.tsx     같은 작품을 방향 있는 판·없는 판으로 겹쳐 보이는 그림
+  FlowTicks.tsx       방향장만 선분으로 그리는 그림
+  about.module.css    /about 전용 스타일 (전역이 아니다)
+  Logo.tsx            브랜드 마크 — href를 주면 진입점이 된다
 lib/
   facture/            ← 붓터치 엔진
     types.ts          Scene, FlowFn, Work

@@ -252,7 +252,7 @@ export default function Gallery() {
       <div className="scrim" />
 
       <div className="ui">
-        <Logo />
+        <Logo href="/about" />
         <div className="panel">
           {shown && (
             <div className={`fade${fading ? " out" : ""}`}>

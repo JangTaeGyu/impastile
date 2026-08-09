@@ -64,6 +64,9 @@ function groundColor(
  * 매 프레임 화면을 셀 그리드로 나누고 셀 중심마다 scene 색과 flow 방향을
  * 샘플링한 뒤, 흐름을 따라 회전된 길쭉한 스트로크(+ 밝은 릿지)를 그린다.
  * 좌표계는 CSS 픽셀 기준이며 devicePixelRatio는 변환 행렬에만 반영된다.
+ *
+ * 크기는 창이 아니라 **캔버스가 CSS로 차지한 상자**에서 온다. 갤러리처럼 화면을
+ * 덮든(100vw/100vh) 문서 안에 끼든 같은 코드로 돈다.
  */
 export class FactureRenderer {
   private ctx: CanvasRenderingContext2D;
@@ -104,9 +107,13 @@ export class FactureRenderer {
   }
 
   resize = () => {
+    const W = this.cv.clientWidth;
+    const H = this.cv.clientHeight;
+    // 아직 레이아웃 전이거나 숨겨져 있다 — 크기가 잡히면 다시 불린다
+    if (!W || !H) return;
     this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-    this.cv.width = Math.round(innerWidth * this.dpr);
-    this.cv.height = Math.round(innerHeight * this.dpr);
+    this.cv.width = Math.round(W * this.dpr);
+    this.cv.height = Math.round(H * this.dpr);
     // 크기를 바꾸면 캔버스가 지워진다. 멈춘 상태(탭이 숨겨진 동안)라면
     // 다음 프레임이 오지 않으므로 여기서 한 장 다시 그려둔다.
     this.draw();
@@ -155,8 +162,9 @@ export class FactureRenderer {
   private draw() {
     const PT = this.t;
     const { ctx, dpr } = this;
-    const W = innerWidth;
-    const H = innerHeight;
+    const W = this.cv.clientWidth;
+    const H = this.cv.clientHeight;
+    if (!W || !H) return;
     const ar = W / H;
     const cs = this.cell;
     const cols = Math.ceil(W / cs) + 1;
