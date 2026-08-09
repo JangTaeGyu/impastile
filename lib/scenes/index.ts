@@ -11,7 +11,7 @@ import { paintingWork } from "./painting";
 // loadWork가 개발 모드에서 경고한다.
 
 /** 타일 한 변의 CSS 픽셀 크기 — 갤러리 안에서 붓터치 크기가 흔들리지 않게 */
-const CELL = 13;
+const CELL = 11;
 
 // 색 보정은 네 작가 모두 기본값(sat 1.28 / gain 1.07)을 쓴다. autoTone의 대역을
 // 벗어나는 작품이 몇 점 있지만(루앙 대성당·인상 해돋이가 특히 옅다) 일부러 두었다 —
