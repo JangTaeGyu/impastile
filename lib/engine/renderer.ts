@@ -1,7 +1,11 @@
+import { fitRect } from "./fit";
 import { clamp, hash, lerp, smooth } from "./math";
 import type { FlowFn, Scene, Work } from "./types";
 
-const BG = "#0a0c19";
+const BG_R = 10;
+const BG_G = 12;
+const BG_B = 25;
+const BG = `rgb(${BG_R},${BG_G},${BG_B})`;
 const MIX_RATE = 2.7; // 크로스페이드 속도 (1/s) — 완료까지 약 0.37s
 const MAX_DT = 0.25; // 스로틀·탭 복귀 시 시간 점프 상한 (s)
 
@@ -21,6 +25,8 @@ export class MosaicRenderer {
   private prevScene: Scene;
   private curFlow: FlowFn;
   private prevFlow: FlowFn;
+  private curAspect?: number;
+  private prevAspect?: number;
   private mixT = 1;
   private cell: number;
   private targetCell: number;
@@ -38,6 +44,8 @@ export class MosaicRenderer {
     this.prevScene = initial.scene;
     this.curFlow = initial.flow ?? DEFAULT_FLOW;
     this.prevFlow = this.curFlow;
+    this.curAspect = initial.aspect;
+    this.prevAspect = initial.aspect;
     this.cell = initial.cell;
     this.targetCell = initial.cell;
     this.resize();
@@ -53,8 +61,10 @@ export class MosaicRenderer {
   transitionTo(work: Work) {
     this.prevScene = this.curScene;
     this.prevFlow = this.curFlow;
+    this.prevAspect = this.curAspect;
     this.curScene = work.scene;
     this.curFlow = work.flow ?? DEFAULT_FLOW;
+    this.curAspect = work.aspect;
     this.mixT = 0;
     this.targetCell = work.cell;
   }
@@ -94,6 +104,13 @@ export class MosaicRenderer {
     const m = smooth(0, 1, this.mixT);
     const fading = m < 1;
 
+    // 원본 비율을 지켜 화면에 앉힌다 — 그림 밖은 바닥만 남는다.
+    // 씬에 넘기는 비율도 화면이 아니라 그림 영역의 것이어야 한다.
+    const cf = fitRect(this.curAspect, ar);
+    const pf = fitRect(this.prevAspect, ar);
+    const curAr = this.curAspect ?? ar;
+    const prevAr = this.prevAspect ?? ar;
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = BG;
     ctx.fillRect(0, 0, W, H);
@@ -101,29 +118,66 @@ export class MosaicRenderer {
     // 회전 스트로크가 화면 가장자리를 비우지 않도록 한 셀 바깥부터 그린다
     for (let rI = -1; rI < rows; rI++) {
       for (let cI = -1; cI < cols; cI++) {
-        const nx = ((cI + 0.5) * cs) / W;
-        const ny = ((rI + 0.5) * cs) / H;
+        const sx = ((cI + 0.5) * cs) / W;
+        const sy = ((rI + 0.5) * cs) / H;
+        const ux = (sx - cf.x) / cf.w;
+        const uy = (sy - cf.y) / cf.h;
+        const inCur = ux >= 0 && ux <= 1 && uy >= 0 && uy <= 1;
+
         // 나가는 씬과 들어오는 씬의 크로스페이드
-        let c: [number, number, number];
+        let rr: number;
+        let gg: number;
+        let bb: number;
         let a: number;
         if (!fading) {
-          c = this.curScene(nx, ny, PT, ar);
-          a = this.curFlow(nx, ny, PT, ar);
+          if (!inCur) continue;
+          const c = this.curScene(ux, uy, PT, curAr);
+          rr = c[0];
+          gg = c[1];
+          bb = c[2];
+          a = this.curFlow(ux, uy, PT, curAr);
         } else {
-          const p = this.prevScene(nx, ny, PT, ar);
-          const q = this.curScene(nx, ny, PT, ar);
-          c = [lerp(p[0], q[0], m), lerp(p[1], q[1], m), lerp(p[2], q[2], m)];
-          // 방향은 벡터로 보간 — 각도 뜀 없이 섞인다
-          const a0 = this.prevFlow(nx, ny, PT, ar);
-          const a1 = this.curFlow(nx, ny, PT, ar);
-          a = Math.atan2(
-            lerp(Math.sin(a0), Math.sin(a1), m),
-            lerp(Math.cos(a0), Math.cos(a1), m),
-          );
+          const vx = (sx - pf.x) / pf.w;
+          const vy = (sy - pf.y) / pf.h;
+          const inPrev = vx >= 0 && vx <= 1 && vy >= 0 && vy <= 1;
+          if (!inCur && !inPrev) continue;
+          // 그림 밖은 바닥색으로 쳐서 여백이 자연스럽게 열리고 닫힌다
+          let pr = BG_R;
+          let pg = BG_G;
+          let pb = BG_B;
+          let a0 = 0;
+          if (inPrev) {
+            const p = this.prevScene(vx, vy, PT, prevAr);
+            pr = p[0];
+            pg = p[1];
+            pb = p[2];
+            a0 = this.prevFlow(vx, vy, PT, prevAr);
+          }
+          let qr = BG_R;
+          let qg = BG_G;
+          let qb = BG_B;
+          let a1 = 0;
+          if (inCur) {
+            const q = this.curScene(ux, uy, PT, curAr);
+            qr = q[0];
+            qg = q[1];
+            qb = q[2];
+            a1 = this.curFlow(ux, uy, PT, curAr);
+          }
+          rr = lerp(pr, qr, m);
+          gg = lerp(pg, qg, m);
+          bb = lerp(pb, qb, m);
+          // 한쪽에만 그림이 있으면 그쪽 결을 그대로 쓴다.
+          // 둘 다면 방향은 벡터로 보간 — 각도 뜀 없이 섞인다
+          a = !inPrev
+            ? a1
+            : !inCur
+              ? a0
+              : Math.atan2(
+                  lerp(Math.sin(a0), Math.sin(a1), m),
+                  lerp(Math.cos(a0), Math.cos(a1), m),
+                );
         }
-        let rr = c[0];
-        let gg = c[1];
-        let bb = c[2];
         // 임파스토: 셀별 붓값 + 밝은 셀 블룸 + 미세한 숨결
         const lum = (rr * 0.3 + gg * 0.6 + bb * 0.1) / 255;
         const brush = 1 + (hash(cI, rI) - 0.5) * 0.16;

@@ -125,3 +125,16 @@ export function paintingScene(
 export function paintingFlow(d: PaintingData): FlowFn {
   return (nx, ny) => flowAt(d, nx, ny);
 }
+
+/**
+ * Work에 그대로 펼쳐 넣는 세 조각.
+ * aspect가 빠지면 렌더러가 화면을 늘려 채우므로 붓결 각도까지 눕는다 —
+ * 셋을 따로 두지 않고 한 번에 만드는 이유다.
+ */
+export function paintingWork(d: PaintingData, sat?: number, gain?: number) {
+  return {
+    scene: paintingScene(d, sat, gain),
+    flow: paintingFlow(d),
+    aspect: d.w / d.h,
+  };
+}

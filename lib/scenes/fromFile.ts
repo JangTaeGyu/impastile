@@ -1,6 +1,6 @@
 import type { Work } from "@/lib/engine/types";
 import { autoTone, extractPainting } from "./extract";
-import { paintingFlow, paintingScene } from "./painting";
+import { paintingWork } from "./painting";
 
 // 사용자가 올린 이미지를 씬으로 만든다.
 // 전시용 6점이 <작품>Data.ts를 거치는 것과 달리 파일이 브라우저 밖으로
@@ -24,7 +24,6 @@ export async function workFromFile(file: File): Promise<Work> {
     desc: "",
     cell: CELL,
     uploaded: true,
-    scene: paintingScene(data, sat, gain),
-    flow: paintingFlow(data),
+    ...paintingWork(data, sat, gain),
   };
 }

@@ -1,6 +1,5 @@
-import { paintingFlow, paintingScene } from "./painting";
+import { paintingWork } from "./painting";
 import { data } from "./selfPortraitData";
 
 /** 자화상 (Self-Portrait, 1887) — 원본 샘플링 */
-export const scenePortrait = paintingScene(data);
-export const flowPortrait = paintingFlow(data);
+export const selfPortrait = paintingWork(data);

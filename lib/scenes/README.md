@@ -9,7 +9,8 @@
   쌍선형 샘플링 씬(`paintingScene`)과 붓결 방향장(`paintingFlow`)을 만든다.
 - `<name>Data.ts` — `scripts/extract-painting.py`가 생성한 자동 생성 파일.
   색상 맵(최대 변 144px RGB)과 붓결 방향장(배각 2θ 벡터, int8 x 2)을 담는다.
-- `<name>.ts` — 3줄짜리 래퍼. `paintingScene(data)` / `paintingFlow(data)` export.
+- `<name>.ts` — 3줄짜리 래퍼. `paintingWork(data)`가 돌려주는
+  `{ scene, flow, aspect }`를 그대로 export한다.
 - `index.ts` — `baseWorks` 레지스트리 (제목·셀 크기·scene·flow).
 - `extract.ts` — 추출기의 브라우저 판. 임의의 이미지에서 `PaintingData`를
   런타임에 만든다 (아래 참고).
@@ -23,7 +24,8 @@
 2. 데이터 생성 (pillow·numpy 필요):
    `python scripts/extract-painting.py --src img.jpg --out lib/scenes/xxxData.ts [--crop t,r,b,l]`
    액자 테두리·워터마크는 `--crop`으로 잘라낸다.
-3. `xxx.ts` 래퍼를 만들고 `index.ts`의 `baseWorks`에 등록한다.
+3. `xxx.ts` 래퍼를 만들고(`export const xxx = paintingWork(data)`)
+   `index.ts`의 `baseWorks`에 `...xxx`로 펼쳐 넣는다.
 4. **`SOURCES.md`에 출처(Commons 파일명)와 크롭 값을 적는다.** 이걸 빠뜨리면
    나중에 색상 맵을 후보 파일과 대조해 역산해야 한다.
 
@@ -82,6 +84,27 @@ const flow = paintingFlow(data);
 
 보정식이 루마(`0.3r+0.6g+0.1b`)를 정확히 보존하는 덕에 채도와 밝기는 독립이다 —
 채도는 `sat`이 이분탐색으로, 밝기는 `gain`이 비례식으로 결정된다.
+
+## 비율
+
+작품마다 종횡비가 다르다 — 전시 6점만 해도 0.79(카페 테라스·자화상·해바라기)에서
+1.35(별밤)까지 걸쳐 있다. 화면에 늘려 채우면 두 가지가 어긋난다.
+
+- 그림이 찌그러진다. 16:9에서 세로 작품은 가로로 2.25배 늘어난다.
+- **붓결이 눕는다.** 방향장의 각도는 원본 비율에서 잰 값인데, 화면이 가로로
+  k배 늘어나 있으면 원본의 θ가 화면에서 `atan2(sinθ, k·cosθ)`가 된다.
+  원본의 45°가 24°로 눕는다 — 이 프로젝트가 지키려는 바로 그 값이 틀어진다.
+
+그래서 `Work.aspect`(원본 가로/세로)를 들고 다니며 `lib/engine/fit.ts`가
+비율을 지켜 앉힌다. 가로세로가 같은 배율로 커지므로 각도가 그대로 보존된다.
+갤러리는 `contain`(전부 보이고 여백이 남는다), 공유 카드는 `cover`(꽉 차고
+잘린다)를 쓴다.
+
+`aspect`를 빠뜨리면 조용히 늘어난다. `paintingWork()`가 셋을 한 번에 만드는 게
+그래서다 — scene·flow만 따로 넘기면 이 값이 새기 쉽다.
+
+**씬에 넘어가는 `ar`은 화면이 아니라 그림 영역의 비율이다.** 비율을 지켜
+앉히면 둘이 다르다.
 
 ## 원리
 

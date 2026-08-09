@@ -1,3 +1,4 @@
+import { fitRect, type FitMode } from "./fit";
 import { clamp, hash, smooth } from "./math";
 import { DEFAULT_FLOW } from "./renderer";
 import type { FlowFn, Scene } from "./types";
@@ -19,6 +20,10 @@ export interface MosaicSvgOptions {
   cell: number;
   /** 샘플링할 시각(초) — 정지 이미지이므로 기본 0 */
   t?: number;
+  /** 원본 가로/세로 — 없으면 화면을 늘려 채운다 */
+  aspect?: number;
+  /** 공유 카드는 여백 없이 꽉 차야 해서 cover를 쓴다 */
+  fit?: FitMode;
 }
 
 /** 소수점 둘째 자리까지 — 문자열 길이를 줄인다 */
@@ -31,8 +36,12 @@ export function mosaicSvg({
   height,
   cell,
   t = 0,
+  aspect,
+  fit = "contain",
 }: MosaicSvgOptions): string {
   const ar = width / height;
+  const rect = fitRect(aspect, ar, fit);
+  const drawAr = aspect ?? ar;
   const cols = Math.ceil(width / cell) + 1;
   const rows = Math.ceil(height / cell) + 1;
   const out: string[] = [
@@ -43,10 +52,13 @@ export function mosaicSvg({
   // 회전 스트로크가 가장자리를 비우지 않도록 한 셀 바깥부터 그린다
   for (let rI = -1; rI < rows; rI++) {
     for (let cI = -1; cI < cols; cI++) {
-      const nx = ((cI + 0.5) * cell) / width;
-      const ny = ((rI + 0.5) * cell) / height;
-      const c = scene(nx, ny, t, ar);
-      const a = flow(nx, ny, t, ar);
+      const sx = ((cI + 0.5) * cell) / width;
+      const sy = ((rI + 0.5) * cell) / height;
+      const nx = (sx - rect.x) / rect.w;
+      const ny = (sy - rect.y) / rect.h;
+      if (nx < 0 || nx > 1 || ny < 0 || ny > 1) continue; // 그림 밖 — 바닥만 남긴다
+      const c = scene(nx, ny, t, drawAr);
+      const a = flow(nx, ny, t, drawAr);
       let rr = c[0];
       let gg = c[1];
       let bb = c[2];

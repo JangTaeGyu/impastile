@@ -12,9 +12,18 @@ export const contentType = "image/png";
 
 // 앱과 같은 렌더링 규칙으로 '별이 빛나는 밤에'를 한 장 굽는다.
 // 캔버스 셀(13px)보다 크게 잡아야 축소된 공유 카드에서도 붓결이 읽힌다.
+// 갤러리는 원본 비율을 지켜 여백을 두지만 공유 카드는 꽉 차야 하므로 cover —
+// 어느 쪽이든 늘리지 않으므로 붓결 각도는 원본 그대로다.
 const [starry] = baseWorks;
 const mosaic = `data:image/svg+xml;base64,${Buffer.from(
-  mosaicSvg({ scene: starry.scene, flow: starry.flow, ...size, cell: 20 }),
+  mosaicSvg({
+    scene: starry.scene,
+    flow: starry.flow,
+    aspect: starry.aspect,
+    fit: "cover",
+    ...size,
+    cell: 20,
+  }),
 ).toString("base64")}`;
 
 const markSrc = `data:image/svg+xml;base64,${(
