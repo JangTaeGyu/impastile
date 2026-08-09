@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { factureSvg } from "@/lib/facture/factureSvg";
 import copy from "@/lib/ogCopy.json";
-import { baseWorks } from "@/lib/scenes";
+import { baseWorks, exhibits } from "@/lib/scenes";
 
 export const alt =
   "Impastile — 반 고흐 '별이 빛나는 밤에'를 방향성 임파스토 붓터치로 다시 그린 화면";
@@ -124,7 +124,11 @@ export default function Image() {
               textShadow: SHADOW,
             }}
           >
-            {copy.desc.replace("{count}", String(baseWorks.length))}
+            {/* 반 고흐만이 아니라 전 전시관을 센다 — 작가가 늘면 여기도 따라 는다 */}
+            {copy.desc.replace(
+              "{count}",
+              String(exhibits.reduce((n, e) => n + e.works.length, 0)),
+            )}
           </div>
         </div>
       </div>

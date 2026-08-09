@@ -13,10 +13,36 @@ import { paintingWork } from "./painting";
 /** 타일 한 변의 CSS 픽셀 크기 — 갤러리 안에서 붓터치 크기가 흔들리지 않게 */
 const CELL = 13;
 
+// 색 보정은 네 작가 모두 기본값(sat 1.28 / gain 1.07)을 쓴다. autoTone의 대역을
+// 벗어나는 작품이 몇 점 있지만(루앙 대성당·인상 해돋이가 특히 옅다) 일부러 두었다 —
+// 대역은 아무 이미지나 받아내는 안전망이지 회화를 맞춰 넣을 기준이 아니고,
+// 옅은 그림을 억지로 올리면 원화에 없는 색을 만들게 된다.
+
 export const ARTIST: Artist = {
   ko: "빈센트 반 고흐",
   en: "Vincent van Gogh",
   era: "1853–1890",
+  movement: "후기 인상주의",
+};
+
+export const MONET: Artist = {
+  ko: "클로드 모네",
+  en: "Claude Monet",
+  era: "1840–1926",
+  movement: "인상주의",
+};
+
+export const MUNCH: Artist = {
+  ko: "에드바르 뭉크",
+  en: "Edvard Munch",
+  era: "1863–1944",
+  movement: "표현주의",
+};
+
+export const CEZANNE: Artist = {
+  ko: "폴 세잔",
+  en: "Paul Cézanne",
+  era: "1839–1906",
   movement: "후기 인상주의",
 };
 
@@ -119,9 +145,94 @@ export const baseWorks: WorkEntry[] = [
   },
 ];
 
+export const monetWorks: WorkEntry[] = [
+  {
+    title: "인상, 해돋이",
+    sub: "Impression, soleil levant · 1872 · 마르모탕 모네 미술관",
+    desc: "르아브르 항구의 안개 낀 새벽. 한 평론가가 이 제목을 비꼬아 쓴 말에서 '인상주의'가 나왔다.",
+    cell: CELL,
+    aspect: 144 / 112,
+    load: () => import("./monetSunriseData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "수련",
+    sub: "Water Lilies · 1906 · 시카고 미술관",
+    desc: "지베르니의 연못. 하늘도 물가도 화면에서 지우고 수면만 남겨, 위아래가 사라진 그림이 됐다.",
+    cell: CELL,
+    aspect: 144 / 139,
+    load: () => import("./monetLiliesData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "루앙 대성당, 서쪽 정면",
+    sub: "Rouen Cathedral, West Façade, Sunlight · 1894 · 워싱턴 내셔널 갤러리",
+    desc: "같은 정면을 시간과 날씨를 바꿔 서른 점 넘게 그렸다. 주제는 돌이 아니라 그 위에 얹힌 빛이다.",
+    cell: CELL,
+    aspect: 94 / 144,
+    load: () => import("./monetRouenData").then((m) => paintingWork(m.data)),
+  },
+];
+
+export const munchWorks: WorkEntry[] = [
+  {
+    title: "절규",
+    sub: "The Scream · 1893 · 노르웨이 국립미술관",
+    desc: "핏빛으로 타는 하늘 아래 다리 위. 비명을 지르는 것은 인물이 아니라 자연이라고 뭉크는 일기에 적었다.",
+    cell: CELL,
+    aspect: 116 / 144,
+    load: () => import("./munchScreamData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "별이 빛나는 밤",
+    sub: "Starry Night · 1893 · 게티 센터",
+    desc: "오스고르스트란의 여름밤. 반 고흐가 같은 제목을 그린 지 네 해 뒤인데, 소용돌이 대신 적막이 있다.",
+    cell: CELL,
+    aspect: 144 / 140,
+    load: () => import("./munchStarryData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "삶의 춤",
+    sub: "The Dance of Life · 1899–1900 · 노르웨이 국립미술관",
+    desc: "하지의 해변. 흰옷·붉은옷·검은옷의 세 여인은 서로 다른 사람이 아니라 한 사람의 세 시절이다.",
+    cell: CELL,
+    aspect: 144 / 94,
+    load: () => import("./munchDanceData").then((m) => paintingWork(m.data)),
+  },
+];
+
+export const cezanneWorks: WorkEntry[] = [
+  {
+    title: "생빅투아르산",
+    sub: "La Montagne Sainte-Victoire vue des Lauves · 1906 · 푸시킨 미술관",
+    desc: "말년에 레 로브의 언덕에서 같은 산을 되풀이해 그렸다. 붓자국이 한 방향으로 나란히 눕는 구성적 필촉.",
+    cell: CELL,
+    aspect: 144 / 118,
+    load: () =>
+      import("./cezanneVictoireData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "카드 놀이하는 사람들",
+    sub: "Les Joueurs de cartes · 1890–1895 · 오르세 미술관",
+    desc: "엑스의 농부 둘이 마주 앉았다. 다섯 판 연작 중 인물이 가장 적고 가장 조용한 축이다.",
+    cell: CELL,
+    aspect: 144 / 118,
+    load: () => import("./cezanneCardsData").then((m) => paintingWork(m.data)),
+  },
+  {
+    title: "사과 바구니",
+    sub: "Le panier de pommes · 1893년경 · 시카고 미술관",
+    desc: "탁자도 병도 서로 다른 시점에서 보고 그렸다. 어긋난 눈높이를 사과와 천이 이어 붙인다.",
+    cell: CELL,
+    aspect: 144 / 115,
+    load: () => import("./cezanneApplesData").then((m) => paintingWork(m.data)),
+  },
+];
+
 /** 전시관 목록. 작가가 늘면 여기에 추가한다. */
 export const exhibits: Exhibit[] = [
   { name: "빈센트 반 고흐 전시관", artist: ARTIST, works: baseWorks },
+  { name: "클로드 모네 전시관", artist: MONET, works: monetWorks },
+  { name: "에드바르 뭉크 전시관", artist: MUNCH, works: munchWorks },
+  { name: "폴 세잔 전시관", artist: CEZANNE, works: cezanneWorks },
 ];
 
 /** 사용자가 올린 이미지가 담기는 전시관 이름 */

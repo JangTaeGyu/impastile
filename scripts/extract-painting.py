@@ -100,17 +100,22 @@ def main():
             )
         print(f"dump: {args.dump} (lum {lum.shape[1]}x{lum.shape[0]})")
 
+    # 조각을 배열에 담아 join한다. "a" + "b" + ... 로 이으면 파서가 중첩된
+    # 이항식 트리를 만들어, 큰 작품(피연산자 1000개 이상)에서 ESLint가
+    # "Maximum call stack size exceeded"로 넘어진다. 배열 원소는 형제라 깊이가 없다.
     def chunk(s, n=100):
-        return "\n".join(f'  "{s[i:i+n]}" +' for i in range(0, len(s), n)).rstrip("+").rstrip()
+        return "\n".join(f'  "{s[i:i+n]}",' for i in range(0, len(s), n))
 
     ts = f"""// 자동 생성 — scripts/extract-painting.py가 원본 회화에서 추출한 데이터.
 import {{ decodePainting }} from "./painting";
 
-const RGB_B64 =
-{chunk(rgb_b64)};
+const RGB_B64 = [
+{chunk(rgb_b64)}
+].join("");
 
-const FLOW_B64 =
-{chunk(flow_b64)};
+const FLOW_B64 = [
+{chunk(flow_b64)}
+].join("");
 
 export const data = decodePainting({W}, {H}, RGB_B64, FLOW_B64);
 """
