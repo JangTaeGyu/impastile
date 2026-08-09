@@ -191,9 +191,9 @@ export function stripAlpha(rgba: Uint8ClampedArray, n: number): Uint8Array {
 // ---- 톤 보정 ----
 //
 // paintingScene의 기본값 sat 1.28 / gain 1.07은 반 고흐 6점에 맞춰 고른 값이다.
-// 임의의 이미지에 그대로 쓰면 무너진다 — 회화는 채도가 0.33~0.63의 좁은 대역에
-// 모여 있지만 사진은 0.20(고양이)에서 0.84(노을)까지 흩어진다. 낮은 쪽은 갤러리
-// 안에서 혼자 잿빛으로 보이고, 높은 쪽은 부스트를 얹으면 포스터처럼 뭉갠다.
+// 임의의 이미지에 그대로 쓰면 무너진다 — 회화는 좁은 대역에 모여 있지만 사진은
+// 잿빛에서 포스터까지 흩어진다. 낮은 쪽은 갤러리 안에서 혼자 바래 보이고,
+// 높은 쪽은 부스트를 얹으면 뭉갠다.
 //
 // 그래서 값을 새로 고정하지 않고, 6점이 실제로 차지하는 대역 안으로만 끌어온다.
 // 대역 안이면 손대지 않는다 — 6점 전부가 이 대역 안에 있으므로 원래 씬은 그대로다.
@@ -201,8 +201,8 @@ export function stripAlpha(rgba: Uint8ClampedArray, n: number): Uint8Array {
 // 보정식이 루마(0.3r+0.6g+0.1b)를 정확히 보존하는 덕에 둘은 독립이다:
 // 채도는 sat만, 밝기는 gain만 움직인다.
 
-/** 보정 후 평균 채도 대역 — 6점 실측 0.394(별밤)~0.776(해바라기) */
-const SAT_BAND: [number, number] = [0.39, 0.78];
+/** 보정 후 채도 대역 — 6점 실측 0.485(별밤)~0.818(해바라기) */
+const SAT_BAND: [number, number] = [0.48, 0.82];
 /** 보정 후 평균 밝기 대역 — 6점 실측 0.303(자화상)~0.697(해바라기) */
 const LUM_BAND: [number, number] = [0.3, 0.7];
 const SAT_LIMIT: [number, number] = [0.55, 2.4];
@@ -211,9 +211,18 @@ const GAIN_LIMIT: [number, number] = [0.7, 1.6];
 export const DEFAULT_SAT = 1.28;
 export const DEFAULT_GAIN = 1.07;
 
-/** sat을 먹인 뒤의 평균 HSV 채도 — sat에 대해 단조증가한다 */
-function meanSat(rgb: Uint8Array, n: number, sat: number): number {
-  let sum = 0;
+/**
+ * sat을 먹인 뒤의 채도 — 픽셀별 채도를 그 픽셀의 유채색량으로 가중해 평균낸다.
+ * sat에 대해 단조증가하므로 이분탐색으로 뒤집을 수 있다.
+ *
+ * 그냥 평균내면 넓은 무채색 영역에 끌려간다. 흰 담요 위의 고양이 사진은
+ * 평균 채도가 0.25로 나오지만 정작 색이 있는 건 고양이뿐이라, 평균을 대역
+ * 안으로 올리려다 피사체만 2.4배로 밀어붙이게 된다. 무채색 픽셀은 가중치가
+ * 0이라 "색이 있는 부분이 얼마나 진한가"만 재게 된다.
+ */
+function chromaSat(rgb: Uint8Array, n: number, sat: number): number {
+  let num = 0;
+  let den = 0;
   for (let i = 0; i < n; i++) {
     const r = rgb[i * 3];
     const g = rgb[i * 3 + 1];
@@ -224,20 +233,22 @@ function meanSat(rgb: Uint8Array, n: number, sat: number): number {
     const cb = l + (b - l) * sat;
     const mx = Math.max(cr, cg, cb);
     const mn = Math.min(cr, cg, cb);
-    if (mx > 1) sum += (mx - mn) / mx;
+    const chroma = mx - mn;
+    if (mx > 1) num += ((mx - mn) / mx) * chroma;
+    den += chroma;
   }
-  return sum / n;
+  return num / (den + 1e-9);
 }
 
-/** 평균 채도가 target이 되는 sat을 찾는다 (단조증가라 이분탐색) */
+/** 채도가 target이 되는 sat을 찾는다 (단조증가라 이분탐색) */
 function solveSat(rgb: Uint8Array, n: number, target: number): number {
   let lo = SAT_LIMIT[0];
   let hi = SAT_LIMIT[1];
-  if (meanSat(rgb, n, hi) < target) return hi;
-  if (meanSat(rgb, n, lo) > target) return lo;
+  if (chromaSat(rgb, n, hi) < target) return hi;
+  if (chromaSat(rgb, n, lo) > target) return lo;
   for (let i = 0; i < 24; i++) {
     const mid = (lo + hi) / 2;
-    if (meanSat(rgb, n, mid) < target) lo = mid;
+    if (chromaSat(rgb, n, mid) < target) lo = mid;
     else hi = mid;
   }
   return (lo + hi) / 2;
@@ -251,7 +262,7 @@ export function autoTone(d: PaintingData): { sat: number; gain: number } {
   const n = d.w * d.h;
 
   let sat = DEFAULT_SAT;
-  const s = meanSat(d.rgb, n, DEFAULT_SAT);
+  const s = chromaSat(d.rgb, n, DEFAULT_SAT);
   if (s < SAT_BAND[0]) sat = solveSat(d.rgb, n, SAT_BAND[0]);
   else if (s > SAT_BAND[1]) sat = solveSat(d.rgb, n, SAT_BAND[1]);
 
