@@ -17,7 +17,7 @@ body {
   color: #f6f3e8;
   cursor: crosshair;
 }
-canvas.mosaic {
+canvas.facture {
   position: fixed;
   inset: 0;
   width: 100vw;

@@ -144,7 +144,7 @@ const flow = paintingFlow(data);
   k배 늘어나 있으면 원본의 θ가 화면에서 `atan2(sinθ, k·cosθ)`가 된다.
   원본의 45°가 24°로 눕는다 — 이 프로젝트가 지키려는 바로 그 값이 틀어진다.
 
-그래서 `Work.aspect`(원본 가로/세로)를 들고 다니며 `lib/engine/fit.ts`가
+그래서 `Work.aspect`(원본 가로/세로)를 들고 다니며 `lib/facture/fit.ts`가
 비율을 지켜 앉힌다. 가로세로가 같은 배율로 커지므로 각도가 그대로 보존된다.
 갤러리는 `contain`(전부 보이고 여백이 남는다), 공유 카드는 `cover`(꽉 차고
 잘린다)를 쓴다.

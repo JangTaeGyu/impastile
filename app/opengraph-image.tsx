@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { mosaicSvg } from "@/lib/engine/mosaicSvg";
+import { factureSvg } from "@/lib/facture/factureSvg";
 import copy from "@/lib/ogCopy.json";
 import { baseWorks } from "@/lib/scenes";
 
@@ -17,8 +17,8 @@ export const contentType = "image/png";
 // 작품 데이터는 지연 로드라 여기서도 받아 쓴다 (서버에서 한 번 굽고 끝난다)
 const [starryEntry] = baseWorks;
 const starry = await starryEntry.load();
-const mosaic = `data:image/svg+xml;base64,${Buffer.from(
-  mosaicSvg({
+const frame = `data:image/svg+xml;base64,${Buffer.from(
+  factureSvg({
     scene: starry.scene,
     flow: starry.flow,
     aspect: starry.aspect,
@@ -46,7 +46,7 @@ export default function Image() {
   return new ImageResponse(
     (
       <div style={{ ...size, display: "flex", position: "relative" }}>
-        <img src={mosaic} alt="" width={size.width} height={size.height} />
+        <img src={frame} alt="" width={size.width} height={size.height} />
         {/* UI가 놓인 모서리만 눌러 글자가 읽히게 한다 — 중앙 그림은 건드리지 않는다 */}
         <div
           style={{

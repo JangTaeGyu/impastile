@@ -11,7 +11,7 @@ import type { FlowFn, Scene } from "./types";
 
 const BG = "#0a0c19";
 
-export interface MosaicSvgOptions {
+export interface FactureSvgOptions {
   scene: Scene;
   flow?: FlowFn;
   width: number;
@@ -29,7 +29,7 @@ export interface MosaicSvgOptions {
 /** 소수점 둘째 자리까지 — 문자열 길이를 줄인다 */
 const n = (v: number) => Math.round(v * 100) / 100;
 
-export function mosaicSvg({
+export function factureSvg({
   scene,
   flow = DEFAULT_FLOW,
   width,
@@ -38,7 +38,7 @@ export function mosaicSvg({
   t = 0,
   aspect,
   fit = "contain",
-}: MosaicSvgOptions): string {
+}: FactureSvgOptions): string {
   const ar = width / height;
   const rect = fitRect(aspect, ar, fit);
   const drawAr = aspect ?? ar;

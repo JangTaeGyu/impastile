@@ -1,4 +1,4 @@
-import type { WorkEntry } from "@/lib/engine/types";
+import type { WorkEntry } from "@/lib/facture/types";
 import { autoTone, extractPainting } from "./extract";
 import { paintingWork } from "./painting";
 

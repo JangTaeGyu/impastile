@@ -1,4 +1,4 @@
-import type { Work, WorkEntry } from "@/lib/engine/types";
+import type { Work, WorkEntry } from "@/lib/facture/types";
 
 // 작품 데이터를 받아 Work로 만들고 기억해 둔다.
 // 같은 작품을 두 번 요청해도 청크는 한 번만 받는다 (진행 중인 약속을 나눠 쓴다).

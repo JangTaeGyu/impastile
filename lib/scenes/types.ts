@@ -1,4 +1,4 @@
-import type { WorkEntry } from "@/lib/engine/types";
+import type { WorkEntry } from "@/lib/facture/types";
 
 export interface Artist {
   ko: string;

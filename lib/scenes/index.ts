@@ -1,5 +1,5 @@
 import type { Artist, Exhibit } from "./types";
-import type { WorkEntry } from "@/lib/engine/types";
+import type { WorkEntry } from "@/lib/facture/types";
 import { paintingWork } from "./painting";
 
 // 작품 데이터(색상 맵 + 방향장)는 한 점당 gzip 약 75KB다. 12점을 모두 번들에

@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
-import MosaicCanvas from "./MosaicCanvas";
+import FactureCanvas from "./FactureCanvas";
 import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
 import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
 import { entryFromFile } from "@/lib/scenes/fromFile";
-import { THUMB_H, thumbSrc, thumbWidth } from "@/lib/engine/thumb";
-import type { Work, WorkEntry } from "@/lib/engine/types";
+import { THUMB_H, thumbSrc, thumbWidth } from "@/lib/facture/thumb";
+import type { Work, WorkEntry } from "@/lib/facture/types";
 
 const AUTO_MS = 7000;
 const FADE_MS = 420;
@@ -247,7 +247,7 @@ export default function Gallery() {
 
   return (
     <>
-      {cur && <MosaicCanvas work={cur} />}
+      {cur && <FactureCanvas work={cur} />}
       <div className="grain" />
       <div className="scrim" />
 

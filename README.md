@@ -7,6 +7,10 @@
 소용돌이치는 밤하늘은 소용돌이 접선을 따라, 사이프러스는 수직 불꽃결을 따라,
 밀밭은 바람에 눕는 방향을 따라 붓이 흐른다.
 
+이 일을 하는 엔진의 이름은 **Facture**(`lib/facture/`)다. 미술사에서 facture는
+물감이 놓인 방식 — 붓이 남긴 자국 그 자체를 가리킨다. 그림의 *무엇*이 아니라
+*어떻게 그어졌는가*를 옮기는 엔진이라 그렇게 부른다.
+
 수록 작품 12점 — 별이 빛나는 밤에 · 해바라기 · 밤의 카페 테라스 · 아를의 침실 ·
 자화상 · 밀밭의 사이프러스 · 론강의 별이 빛나는 밤 · 붓꽃 · 밤의 카페 · 노란 집 ·
 아몬드 꽃 · 까마귀가 나는 밀밭.
@@ -67,7 +71,7 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 
 ### 2. 런타임 렌더링
 
-매 프레임 `MosaicRenderer`가 셀마다:
+매 프레임 `FactureRenderer`가 셀마다:
 
 1. `scene(nx, ny, t, ar)` → 색상 맵을 쌍선형 샘플링 (채도·밝기 보정, 붓결 방향 미세 표류)
 2. `flow(nx, ny, t, ar)` → 방향장을 쌍선형 보간해 스트로크 각도
@@ -90,16 +94,16 @@ app/
 assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
 components/
   Gallery.tsx         작품 전환 상태, 정보 패널, 전시관 탭·썸네일 띠, 업로드
-  MosaicCanvas.tsx    캔버스 + rAF 루프 수명 관리
+  FactureCanvas.tsx   캔버스 + rAF 루프 수명 관리
   Logo.tsx            브랜드 마크
 lib/
-  engine/
+  facture/            ← 붓터치 엔진
     types.ts          Scene, FlowFn, Work
     math.ts           lerp, clamp, smooth, hash
     fit.ts            원본 비율을 지켜 화면에 앉히기 (contain / cover)
     renderer.ts       프레임 루프, 스트로크 렌더링, 크로스페이드, 여백 바탕
-    mosaicSvg.ts      같은 규칙으로 한 프레임을 SVG로 굽기 (서버·OG·썸네일용)
-    thumb.ts          작품 썸네일 (mosaicSvg를 셀 4px로)
+    factureSvg.ts     같은 규칙으로 한 프레임을 SVG로 굽기 (서버·OG·썸네일용)
+    thumb.ts          작품 썸네일 (factureSvg를 셀 4px로)
   scenes/
     painting.ts       원화 데이터 디코드 + 샘플링 씬/방향장 생성
     <작품>Data.ts     자동 생성 데이터 (색상 맵 + 방향장) — 지연 로드된다

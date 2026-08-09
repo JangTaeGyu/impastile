@@ -65,7 +65,7 @@ function groundColor(
  * 샘플링한 뒤, 흐름을 따라 회전된 길쭉한 스트로크(+ 밝은 릿지)를 그린다.
  * 좌표계는 CSS 픽셀 기준이며 devicePixelRatio는 변환 행렬에만 반영된다.
  */
-export class MosaicRenderer {
+export class FactureRenderer {
   private ctx: CanvasRenderingContext2D;
   private curScene: Scene;
   private prevScene: Scene;

@@ -1,5 +1,5 @@
-import { clamp } from "@/lib/engine/math";
-import type { FlowFn, Scene } from "@/lib/engine/types";
+import { clamp } from "@/lib/facture/math";
+import type { FlowFn, Scene } from "@/lib/facture/types";
 
 // ============================================================
 // 원본 회화 샘플링 공용 모듈.
