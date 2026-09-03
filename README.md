@@ -51,8 +51,17 @@ npm run build    # 프로덕션 빌드
 npm run lint     # ESLint
 ```
 
-배포처는 <https://impastile.jubrolab.dev>. OG 태그의 절대 URL 기준도 이 주소이며,
-프리뷰·로컬에서 다른 주소를 쓰려면 `NEXT_PUBLIC_SITE_URL`로 덮는다.
+배포처는 <https://impastile.jubrolab.dev>. canonical·OG·`robots.txt`·`sitemap.xml`·
+JSON-LD가 모두 이 주소를 기준으로 삼으며(`lib/site.ts`), 프리뷰·로컬에서 다른 주소를
+쓰려면 `NEXT_PUBLIC_SITE_URL`로 덮는다.
+
+서치 콘솔·네이버 웹마스터의 소유 확인 태그는 빌드 환경변수로 받는다. 없으면 태그도
+나가지 않으므로 로컬에서는 지정할 필요가 없다.
+
+| 환경변수 | 나가는 태그 |
+| --- | --- |
+| `GOOGLE_SITE_VERIFICATION` | `<meta name="google-site-verification">` |
+| `NAVER_SITE_VERIFICATION` | `<meta name="naver-site-verification">` |
 
 공유 카드 문구(`lib/ogCopy.json`)를 고쳤다면 한글 폰트 서브셋을 다시 굽는다.
 
@@ -101,10 +110,12 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 
 ```
 app/
-  layout.tsx          메타데이터(OG/트위터 카드 포함), 폰트
-  page.tsx            갤러리 페이지 (서버 컴포넌트 셸)
+  layout.tsx          메타데이터(canonical·robots·OG/트위터 카드 포함), 폰트
+  page.tsx            갤러리 페이지 (서버 컴포넌트 셸) + 구조화 데이터, 크롤러용 개요
   about/page.tsx      Facture 소개 — 그림 스타일과 엔진 구조 (우상단 아이콘에서 들어간다)
   opengraph-image.tsx 공유 카드 이미지 (빌드 시 1회 생성)
+  robots.ts           /robots.txt
+  sitemap.ts          /sitemap.xml
   icon.svg            파비콘
   globals.css         전역 스타일
 assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
@@ -132,6 +143,8 @@ lib/
     load.ts           작품 데이터 지연 로드 + 캐시 + 배경 선로딩
     extract.ts        추출기의 브라우저 판 + 톤 자동 보정 (autoTone)
     fromFile.ts       올린 파일 → Work
+  site.ts             주소·제목·설명·검색어 — <head>와 JSON-LD와 개요가 함께 본다
+  jsonLd.ts           schema.org 구조화 데이터 (ImageGallery·VisualArtwork·AboutPage)
   ogCopy.json         OG 카드 문구 (폰트 서브셋의 입력이기도 하다)
 scripts/
   extract-painting.py 원화 → 데이터 모듈 변환기
