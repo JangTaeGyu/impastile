@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/site";
+import { locatedWorks, workPath } from "@/lib/works";
 
-// /sitemap.xml — 갤러리는 작품마다 주소가 따로 없는 한 장짜리 화면이라
-// 실제 문서는 갤러리와 소개 둘뿐이다.
+// /sitemap.xml — 갤러리와 소개, 그리고 작품 마흔두 장.
 export default function sitemap(): MetadataRoute.Sitemap {
   // 캐시되는 라우트다 — 빌드 때 한 번 굳고 배포할 때마다 새 시각이 박힌다.
   const lastModified = new Date();
@@ -19,5 +19,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "yearly",
       priority: 0.6,
     },
+    // 작품 낱장. 그림도 글도 바뀌지 않으므로 yearly이고, 갤러리보다는 낮되
+    // 소개보다는 높다 — 검색에서 실제로 찾는 것은 작품 이름이다.
+    ...locatedWorks.map((w) => ({
+      url: `${SITE_URL}${workPath(w.slug)}`,
+      lastModified,
+      changeFrequency: "yearly" as const,
+      priority: 0.8,
+    })),
   ];
 }

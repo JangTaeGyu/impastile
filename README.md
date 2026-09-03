@@ -63,7 +63,8 @@ JSON-LD가 모두 이 주소를 기준으로 삼으며(`lib/site.ts`), 프리뷰
 | `GOOGLE_SITE_VERIFICATION` | `<meta name="google-site-verification">` |
 | `NAVER_SITE_VERIFICATION` | `<meta name="naver-site-verification">` |
 
-공유 카드 문구(`lib/ogCopy.json`)를 고쳤다면 한글 폰트 서브셋을 다시 굽는다.
+공유 카드에 실리는 글자(`lib/ogCopy.json`의 문구, `lib/scenes/index.ts`의 작품
+제목·원제·소장처·작가 이름)를 고쳤다면 한글 폰트 서브셋을 다시 굽는다.
 
 ```bash
 node scripts/fetch-og-font.mjs   # → assets/og/*.woff (커밋 대상)
@@ -112,10 +113,13 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 app/
   layout.tsx          메타데이터(canonical·robots·OG/트위터 카드 포함), 폰트
   page.tsx            갤러리 페이지 (서버 컴포넌트 셸) + 구조화 데이터, 크롤러용 개요
+  work/[slug]/        작품 낱장 — 마흔두 장. 화면은 갤러리 그대로이고 그 작품에서 연다
+    page.tsx          작품별 제목·설명·canonical·구조화 데이터
+    opengraph-image.tsx  작품별 공유 카드
   about/page.tsx      Facture 소개 — 그림 스타일과 엔진 구조 (우상단 아이콘에서 들어간다)
-  opengraph-image.tsx 공유 카드 이미지 (빌드 시 1회 생성)
+  opengraph-image.tsx 갤러리 공유 카드 (빌드 시 1회 생성)
   robots.ts           /robots.txt
-  sitemap.ts          /sitemap.xml
+  sitemap.ts          /sitemap.xml (갤러리 + 소개 + 작품 42장)
   icon.svg            파비콘
   globals.css         전역 스타일
 assets/og/            카드용 한글 폰트 서브셋 (자동 생성)
@@ -144,8 +148,10 @@ lib/
     extract.ts        추출기의 브라우저 판 + 톤 자동 보정 (autoTone)
     fromFile.ts       올린 파일 → Work
   site.ts             주소·제목·설명·검색어 — <head>와 JSON-LD와 개요가 함께 본다
-  jsonLd.ts           schema.org 구조화 데이터 (ImageGallery·VisualArtwork·AboutPage)
-  ogCopy.json         OG 카드 문구 (폰트 서브셋의 입력이기도 하다)
+  works.ts            작품을 한 줄로 편 목록 + 슬러그 — 주소·사이트맵·개요의 근거
+  jsonLd.ts           schema.org 구조화 데이터 (ImageGallery·VisualArtwork·ItemPage)
+  ogCard.ts           공유 카드 두 장이 함께 쓰는 크기·스크림·폰트
+  ogCopy.json         갤러리 카드 문구 (폰트 서브셋의 입력이기도 하다)
 scripts/
   extract-painting.py 원화 → 데이터 모듈 변환기
   fetch-og-font.mjs   OG 카드 문구 → 한글 폰트 서브셋

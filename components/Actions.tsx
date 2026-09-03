@@ -30,9 +30,20 @@ async function copyText(text: string) {
 
 /**
  * 우측 상단 아이콘 세 개 — 엔진 소개(/about), 링크 복사, 공유.
- * 지금 걸린 작품 제목을 받아 공유 문구에 얹는다.
+ * 지금 걸린 작품의 제목과 낱장 주소를 받아 공유 문구와 링크에 얹는다.
  */
-export default function Actions({ title }: { title?: string }) {
+export default function Actions({
+  title,
+  href,
+}: {
+  title?: string;
+  /**
+   * 건넬 주소. 갤러리를 넘기다 보면 주소창은 그대로인데 화면은 다른 작품이라,
+   * location.href를 그냥 복사하면 받는 사람이 첫 작품을 보게 된다.
+   * 올린 이미지에는 주소가 없으므로 그때는 지금 페이지를 건넨다.
+   */
+  href?: string;
+}) {
   const [note, setNote] = useState("");
   const timer = useRef(0);
 
@@ -44,16 +55,22 @@ export default function Actions({ title }: { title?: string }) {
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 
+  // 상대 경로를 절대 주소로 — 공유 시트도 클립보드도 온전한 링크여야 한다
+  const linkOf = useCallback(
+    () => (href ? new URL(href, location.origin).href : location.href),
+    [href],
+  );
+
   const onCopy = useCallback(async () => {
     say(
-      (await copyText(location.href))
+      (await copyText(linkOf()))
         ? "링크를 복사했습니다"
         : "링크를 복사하지 못했습니다",
     );
-  }, [say]);
+  }, [say, linkOf]);
 
   const onShare = useCallback(async () => {
-    const url = location.href;
+    const url = linkOf();
     const text = title
       ? `${title} — 원화의 붓결을 따라 다시 그린 회화`
       : "원화의 붓결을 따라 다시 그린 회화";
@@ -72,7 +89,7 @@ export default function Actions({ title }: { title?: string }) {
         ? "공유 창이 없어 링크를 복사했습니다"
         : "공유하지 못했습니다",
     );
-  }, [say, title]);
+  }, [say, title, linkOf]);
 
   return (
     <div className="actions">

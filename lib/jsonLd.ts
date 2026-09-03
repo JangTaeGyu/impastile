@@ -1,10 +1,11 @@
 import { exhibits } from "@/lib/scenes";
 import type { Artist } from "@/lib/scenes/types";
-import { DESCRIPTION, NAME, SITE_URL, TITLE, splitSub } from "@/lib/site";
+import { type Located, locatedWorks, workPath } from "@/lib/works";
+import { DESCRIPTION, NAME, SITE_URL, TITLE } from "@/lib/site";
 
 /**
  * schema.org 구조화 데이터. 화면에 그림만 있는 사이트라 크롤러가 글로 읽을 게
- * 거의 없다 — 무엇이 걸려 있는지는 여기와 `app/page.tsx`의 개요가 말한다.
+ * 거의 없다 — 무엇이 걸려 있는지는 여기와 각 페이지의 개요가 말한다.
  * 검사는 https://validator.schema.org 또는 리치 결과 테스트로 한다.
  */
 
@@ -30,6 +31,14 @@ const personId = (artist: Artist) =>
     .toLowerCase()
     .replace(/[^a-z]+/g, "-")}`;
 
+const personNode = (a: Artist) => ({
+  "@type": "Person",
+  "@id": personId(a),
+  name: a.en,
+  alternateName: a.ko,
+  jobTitle: "Painter",
+});
+
 const website = {
   "@type": "WebSite",
   "@id": WEBSITE_ID,
@@ -39,42 +48,32 @@ const website = {
   inLanguage: "ko-KR",
 };
 
+/** 작품 한 점. 목록(홈)과 낱장(/work/…)이 같은 모양을 쓴다 */
+const artworkNode = (w: Located) => ({
+  "@type": "VisualArtwork",
+  "@id": `${SITE_URL}${workPath(w.slug)}#artwork`,
+  url: `${SITE_URL}${workPath(w.slug)}`,
+  name: w.entry.title,
+  alternateName: w.original,
+  description: w.entry.desc,
+  artform: "Painting",
+  genre: w.artist.movement,
+  // dateCreated는 날짜 자리다. '1900–1906'·'1893년경'처럼 한 해로 떨어지지
+  // 않는 작품은 미술관 목록과 같이 첫 해로 적고, 원래 표기는 개요의 글에 남는다.
+  dateCreated: w.year.match(/\d{4}/)?.[0],
+  creator: { "@id": personId(w.artist) },
+});
+
+const artistNodes = () =>
+  exhibits.flatMap((e) => (e.artist ? [personNode(e.artist)] : []));
+
 /** 갤러리(홈) — 전시관 전체를 ImageGallery 한 장으로 편다 */
 export function galleryJsonLd() {
-  const artists = exhibits.flatMap((e) => (e.artist ? [e.artist] : []));
-
-  const artworks = exhibits.flatMap((e) => {
-    const artist = e.artist;
-    if (!artist) return []; // '나의 전시관'은 런타임에만 있어 여기 오지 않는다
-    return e.works.map((w) => {
-      const { original, year } = splitSub(w.sub);
-      return {
-        "@type": "VisualArtwork",
-        name: w.title,
-        alternateName: original,
-        description: w.desc,
-        artform: "Painting",
-        genre: artist.movement,
-        // dateCreated는 날짜 자리다. '1900–1906'·'1893년경'처럼 한 해로
-        // 떨어지지 않는 작품은 미술관 목록과 같이 첫 해로 적고, 원래 표기는
-        // 개요의 글에 그대로 남는다.
-        dateCreated: year.match(/\d{4}/)?.[0],
-        creator: { "@id": personId(artist) },
-      };
-    });
-  });
-
   return {
     "@context": "https://schema.org",
     "@graph": [
       website,
-      ...artists.map((a) => ({
-        "@type": "Person",
-        "@id": personId(a),
-        name: a.en,
-        alternateName: a.ko,
-        jobTitle: "Painter",
-      })),
+      ...artistNodes(),
       {
         "@type": "ImageGallery",
         "@id": `${SITE_URL}/#gallery`,
@@ -83,7 +82,40 @@ export function galleryJsonLd() {
         description: DESCRIPTION,
         inLanguage: "ko-KR",
         isPartOf: { "@id": WEBSITE_ID },
-        hasPart: artworks,
+        hasPart: locatedWorks.map(artworkNode),
+      },
+    ],
+  };
+}
+
+/** 작품 낱장 — 그림 하나가 문서의 주인이다 */
+export function workJsonLd(w: Located, title: string, description: string) {
+  const url = `${SITE_URL}${workPath(w.slug)}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      website,
+      personNode(w.artist),
+      artworkNode(w),
+      {
+        "@type": "ItemPage",
+        "@id": `${url}#page`,
+        url,
+        name: title,
+        description,
+        inLanguage: "ko-KR",
+        isPartOf: { "@id": WEBSITE_ID },
+        mainEntity: { "@id": `${url}#artwork` },
+        breadcrumb: { "@id": `${url}#breadcrumb` },
+      },
+      {
+        "@type": "BreadcrumbList",
+        "@id": `${url}#breadcrumb`,
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: NAME, item: SITE_URL },
+          { "@type": "ListItem", position: 2, name: w.exhibit, item: SITE_URL },
+          { "@type": "ListItem", position: 3, name: w.entry.title, item: url },
+        ],
       },
     ],
   };

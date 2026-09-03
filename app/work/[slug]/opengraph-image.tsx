@@ -9,31 +9,49 @@ import {
   size,
 } from "@/lib/ogCard";
 import copy from "@/lib/ogCopy.json";
-import { baseWorks, exhibits } from "@/lib/scenes";
+import { findWork, locatedWorks } from "@/lib/works";
 
-export const alt =
-  "Impastile — 반 고흐 '별이 빛나는 밤에'를 방향성 임파스토 붓터치로 다시 그린 화면";
+// 작품 낱장의 공유 카드. 루트의 것(app/opengraph-image.tsx)과 규칙은 같고
+// 그리는 그림과 문구만 그 작품의 것이다 — '해바라기' 링크를 붙였는데 카드에
+// '별이 빛나는 밤에'가 뜨면 안 된다.
+
 export { contentType, size };
 
-// 앱과 같은 렌더링 규칙으로 '별이 빛나는 밤에'를 한 장 굽는다.
-// 캔버스 셀(11px)보다 크게 잡아야 축소된 공유 카드에서도 붓결이 읽힌다.
-// 갤러리는 원본 비율을 지켜 여백을 두지만 공유 카드는 꽉 차야 하므로 cover —
-// 어느 쪽이든 늘리지 않으므로 붓결 각도는 원본 그대로다.
-// 작품 데이터는 지연 로드라 여기서도 받아 쓴다 (서버에서 한 번 굽고 끝난다)
-const [starryEntry] = baseWorks;
-const starry = await starryEntry.load();
-const frame = `data:image/svg+xml;base64,${Buffer.from(
-  factureSvg({
-    scene: starry.scene,
-    flow: starry.flow,
-    aspect: starry.aspect,
-    fit: "cover",
-    ...size,
-    cell: 20,
-  }),
-).toString("base64")}`;
+export function generateStaticParams() {
+  return locatedWorks.map((w) => ({ slug: w.slug }));
+}
 
-export default function Image() {
+export async function generateImageMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const w = findWork((await params).slug);
+  return [
+    {
+      id: "card",
+      size,
+      contentType,
+      alt: `Impastile — ${w?.artist.ko}의 '${w?.entry.title}'을 방향성 임파스토 붓터치로 다시 그린 화면`,
+    },
+  ];
+}
+
+export default async function Image({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const w = findWork((await params).slug)!;
+  const { scene, flow, aspect } = await w.entry.load();
+
+  // 갤러리는 원본 비율을 지켜 여백을 두지만 공유 카드는 꽉 차야 하므로 cover.
+  // 어느 쪽이든 늘리지 않으므로 붓결 각도는 원본 그대로다. 셀은 캔버스(11px)보다
+  // 크게 잡아야 축소된 카드에서도 붓결이 읽힌다.
+  const frame = `data:image/svg+xml;base64,${Buffer.from(
+    factureSvg({ scene, flow, aspect, fit: "cover", ...size, cell: 20 }),
+  ).toString("base64")}`;
+
   return new ImageResponse(
     (
       <div style={{ ...size, display: "flex", position: "relative" }}>
@@ -89,7 +107,7 @@ export default function Image() {
               textShadow: SHADOW,
             }}
           >
-            {copy.kicker}
+            {w.artist.ko}
           </div>
           <div
             style={{
@@ -101,23 +119,21 @@ export default function Image() {
               textShadow: SHADOW,
             }}
           >
-            {copy.title}
+            {w.entry.title}
           </div>
           <div
             style={{
               marginTop: 22,
-              maxWidth: 760,
+              maxWidth: 820,
               fontSize: 25,
               lineHeight: 1.6,
               color: "#e7e2cf",
               textShadow: SHADOW,
             }}
           >
-            {/* 반 고흐만이 아니라 전 전시관을 센다 — 작가가 늘면 여기도 따라 는다 */}
-            {copy.desc.replace(
-              "{count}",
-              String(exhibits.reduce((n, e) => n + e.works.length, 0)),
-            )}
+            {/* satori는 자식이 둘 이상인 div에 display를 요구한다 —
+                조각내지 말고 한 문자열로 넘긴다 */}
+            {`${w.original} · ${w.year} · ${w.holder}`}
           </div>
         </div>
       </div>

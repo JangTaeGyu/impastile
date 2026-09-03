@@ -7,6 +7,7 @@ import FactureCanvas from "./FactureCanvas";
 import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
 import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
 import { entryFromFile } from "@/lib/scenes/fromFile";
+import { locatedWorks, workPath } from "@/lib/works";
 import { THUMB_H, thumbSrc, thumbWidth } from "@/lib/facture/thumb";
 import type { Work, WorkEntry } from "@/lib/facture/types";
 
@@ -17,13 +18,26 @@ const NOTICE_MS = 4000;
 /** 사용자가 올린 이미지가 담기는 탭은 항상 마지막이다 */
 const MY_TAB = exhibits.length;
 
-export default function Gallery() {
+/**
+ * 갤러리가 처음 여는 자리. `/work/<슬러그>`가 자기 작품을 지정해 들어온다 —
+ * 없으면 첫 전시관의 첫 작품이다.
+ */
+export interface Start {
+  tab: number;
+  idx: number;
+}
+
+export default function Gallery({ start }: { start?: Start } = {}) {
   const [mine, setMine] = useState<WorkEntry[]>([]); // 나의 전시관
-  const [tab, setTab] = useState(0);
-  const [idx, setIdx] = useState(0); // 띠에서 고른 자리 — 데이터를 기다리지 않는다
+  const [tab, setTab] = useState(start?.tab ?? 0);
+  // 띠에서 고른 자리 — 데이터를 기다리지 않는다
+  const [idx, setIdx] = useState(start?.idx ?? 0);
   const [cur, setCur] = useState<Work | null>(null); // 캔버스가 그리는 작품
-  // 제목이 보여주는 작품 — 전환이 끝난 뒤 갱신되므로 자리가 아니라 값으로 든다
-  const [shown, setShown] = useState<{ work: Work; tab: number } | null>(null);
+  // 제목이 보여주는 작품 — 전환이 끝난 뒤 갱신되므로 자리가 아니라 값으로 든다.
+  // path는 그 작품의 낱장 주소다 (올린 이미지에는 없다) — 공유가 이걸 건넨다.
+  const [shown, setShown] = useState<
+    { work: Work; tab: number; path?: string } | null
+  >(null);
   const [fading, setFading] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -33,7 +47,7 @@ export default function Gallery() {
 
   const idxRef = useRef(idx);
   // 콜백이 매번 다시 만들어지지 않도록 최신 값을 ref로도 들고 있는다
-  const tabRef = useRef(0);
+  const tabRef = useRef(start?.tab ?? 0);
   const mineRef = useRef<WorkEntry[]>([]);
   // 늦게 도착한 로드가 그 사이 바뀐 선택을 덮어쓰지 않게 하는 순번
   const seqRef = useRef(0);
@@ -42,6 +56,9 @@ export default function Gallery() {
   const resetAuto = useRef(() => {});
   const fileRef = useRef<HTMLInputElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
+
+  // 서버가 한 번 준 값이라 바뀌지 않는다 — 아래 effect의 의존성으로 쓰려고 꺼내둔다
+  const startIdx = start?.idx ?? 0;
 
   useEffect(() => {
     idxRef.current = idx;
@@ -86,7 +103,8 @@ export default function Gallery() {
         setFading(true);
         window.clearTimeout(fadeTimer.current);
         fadeTimer.current = window.setTimeout(() => {
-          setShown({ work: w, tab: t });
+          const at = locatedWorks.find((o) => o.tab === t && o.idx === n);
+          setShown({ work: w, tab: t, path: at && workPath(at.slug) });
           setFading(false);
         }, FADE_MS);
       })
@@ -106,10 +124,12 @@ export default function Gallery() {
     [go],
   );
 
-  // 첫 작품부터 받는다. 나머지는 아래에서 전시관 단위로 따라온다.
+  // 열린 자리의 작품부터 받는다. 나머지는 아래에서 전시관 단위로 따라온다.
+  // (`/work/<슬러그>`로 들어왔으면 그 작품이고, 갤러리면 첫 점이다.
+  //  tabRef는 useState 초기값에서 이미 맞춰져 있으므로 go만 부르면 된다.)
   useEffect(() => {
-    go(0);
-  }, [go]);
+    go(startIdx);
+  }, [go, startIdx]);
 
   // 띠의 썸네일은 결국 데이터를 봐야 구울 수 있다. 다만 필요한 것은 **지금 열린
   // 전시관**뿐이다 — 마흔두 점을 한꺼번에 받으면 첫 화면 뒤로 3MB가 흐른다.
@@ -261,7 +281,7 @@ export default function Gallery() {
       <div className="ui">
         <div className="topbar">
           <Logo />
-          <Actions title={shown?.work.title} />
+          <Actions title={shown?.work.title} href={shown?.path} />
         </div>
         <div className="panel">
           {shown && (
