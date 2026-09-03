@@ -34,6 +34,22 @@ export const DESCRIPTION =
   "실제로 그어진 붓결 방향을 따라 임파스토 붓터치 하나하나로 다시 그리는 웹 갤러리";
 
 /**
+ * 서치 콘솔 소유 확인 토큰 (URL 접두어 속성 https://impastile.jubrolab.dev/).
+ * 어차피 모든 페이지의 HTML에 그대로 실리는 공개 값이고 도메인당 하나뿐이라,
+ * 배포처 설정에 흩어두는 것보다 여기 적어두는 편이 낫다 — 배포 환경을 건드리지
+ * 않아도 확인이 통과한다. 다른 주소로 띄울 때를 위해 덮어쓰기는 남긴다.
+ */
+export const GOOGLE_VERIFICATION =
+  process.env.GOOGLE_SITE_VERIFICATION ??
+  "EohLIsv996hipvC-zZPba5ClWreNM6yKZDXtRCkpWP8";
+
+/**
+ * 네이버 웹마스터도구 확인 토큰. 아직 등록 전이라 비어 있고, 비어 있으면
+ * 태그도 나가지 않는다.
+ */
+export const NAVER_VERIFICATION = process.env.NAVER_SITE_VERIFICATION;
+
+/**
  * <meta name="keywords">. 구글은 오래전에 무시하지만 네이버·다음 쪽에서는
  * 아직 읽는 자리라 작가 이름만이라도 한글·영문으로 함께 남겨둔다.
  */

@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { DESCRIPTION, KEYWORDS, NAME, SITE_URL, TITLE } from "@/lib/site";
+import {
+  DESCRIPTION,
+  GOOGLE_VERIFICATION,
+  KEYWORDS,
+  NAME,
+  NAVER_VERIFICATION,
+  SITE_URL,
+  TITLE,
+} from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,17 +16,12 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-// 서치 콘솔·네이버 웹마스터의 소유 확인 태그. 배포처마다 다른 값이라
-// 코드에 박지 않고 빌드 환경에서 받는다 — 없으면 태그도 나가지 않는다.
-// (정적으로 굳는 <head>라 빌드 시점에 있어야 한다.)
+// 서치 콘솔·네이버 웹마스터의 소유 확인 태그. 값은 lib/site.ts가 쥔다 —
+// 없는 것은 태그도 내보내지 않는다 (빈 content로 나가면 확인이 실패한다).
 const verification: Metadata["verification"] = {};
-if (process.env.GOOGLE_SITE_VERIFICATION) {
-  verification.google = process.env.GOOGLE_SITE_VERIFICATION;
-}
-if (process.env.NAVER_SITE_VERIFICATION) {
-  verification.other = {
-    "naver-site-verification": process.env.NAVER_SITE_VERIFICATION,
-  };
+if (GOOGLE_VERIFICATION) verification.google = GOOGLE_VERIFICATION;
+if (NAVER_VERIFICATION) {
+  verification.other = { "naver-site-verification": NAVER_VERIFICATION };
 }
 
 export const metadata: Metadata = {

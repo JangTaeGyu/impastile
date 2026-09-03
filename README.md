@@ -55,10 +55,12 @@ npm run lint     # ESLint
 JSON-LD가 모두 이 주소를 기준으로 삼으며(`lib/site.ts`), 프리뷰·로컬에서 다른 주소를
 쓰려면 `NEXT_PUBLIC_SITE_URL`로 덮는다.
 
-서치 콘솔·네이버 웹마스터의 소유 확인 태그는 빌드 환경변수로 받는다. 없으면 태그도
-나가지 않으므로 로컬에서는 지정할 필요가 없다.
+소유 확인 태그는 `lib/site.ts`가 쥔다. 서치 콘솔 토큰은 공개 값이고 도메인당
+하나뿐이라 코드에 적어두었고(속성: URL 접두어 `https://impastile.jubrolab.dev/`),
+네이버는 아직 등록 전이라 비어 있다 — 비어 있으면 태그도 나가지 않는다.
+다른 주소로 띄울 때는 환경변수로 덮는다.
 
-| 환경변수 | 나가는 태그 |
+| 환경변수 | 덮는 값 |
 | --- | --- |
 | `GOOGLE_SITE_VERIFICATION` | `<meta name="google-site-verification">` |
 | `NAVER_SITE_VERIFICATION` | `<meta name="naver-site-verification">` |
