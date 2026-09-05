@@ -100,7 +100,7 @@ python3 -m venv .venv && .venv/bin/pip install pillow numpy
 
 매 프레임 `FactureRenderer`가 셀마다:
 
-1. `scene(nx, ny, t, ar)` → 색상 맵을 쌍선형 샘플링 (채도·밝기 보정, 붓결 방향 미세 표류)
+1. `scene(nx, ny, t, ar)` → 색상 맵을 쌍선형 샘플링 (채도·밝기 보정, 붓결 방향으로 색을 실어 나름)
 2. `flow(nx, ny, t, ar)` → 방향장을 쌍선형 보간해 스트로크 각도
 3. 그 각도로 회전한 길쭉한 사각형 + 밝은 릿지(물감이 솟은 가장자리)를 그린다
 
