@@ -16,8 +16,8 @@ const MAX_DT = 0.25; // 스로틀·탭 복귀 시 시간 점프 상한 (s)
  * 하나하나에 붙는다 (면적을 75% 줄여도 7%가 빠지고, 개수를 41% 줄이면 39%가
  * 빠진다). 그러니 해상도나 붓터치 크기를 건드리는 대신 장수를 줄인다.
  *
- * 한 장 안에서 움직이는 것은 아주 느린 색 표류(0.003)와 ±4% 숨결뿐이라
- * 60에서 30으로 내려도 정지 화면은 완전히 같고 움직임의 결도 유지된다.
+ * 한 장 안에서 움직이는 것은 아주 느린 색 표류(0.003)뿐이라 60에서 30으로
+ * 내려도 정지 화면은 완전히 같고 움직임의 결도 유지된다.
  */
 const FPS_CAP = 30;
 // 표시 주기가 딱 나누어떨어지지 않아 한 장씩 걸러지는 것을 막는 여유
@@ -30,9 +30,10 @@ export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
 // 비율을 지켜 앉히면 그림 옆에 여백이 남는다. 비워두면 화면이 끊겨 보여서
 // 바탕도 붓으로 칠한다.
 //
-// 결은 작품과 무관한 소용돌이가 그림을 감싸고 돈다 — 작품이 바뀌어도 바탕의
-// 흐름은 고요하다. 색은 반대로 작품에서 이어받는다: 그림 가장자리 색을 물고
-// 나가되 멀어질수록 바닥으로 잦아들어, 여백이 그림에서 번져 나온 것처럼 보인다.
+// 결은 작품과 무관한 소용돌이가 그림을 감싸고 돈다 — 작품이 바뀌어도, 시간이
+// 흘러도 바탕의 흐름은 고요하다. 색은 반대로 작품에서 이어받는다: 그림 가장자리
+// 색을 물고 나가되 멀어질수록 바닥으로 잦아들어, 여백이 그림에서 번져 나온 것처럼
+// 보인다.
 const GROUND_R = 17;
 const GROUND_G = 20;
 const GROUND_B = 36;
@@ -40,11 +41,8 @@ const GROUND_B = 36;
 const GROUND_MIX = 0.2;
 
 /** 여백의 붓결 — 소용돌이 중심은 그림에 가려 보이지 않는다 */
-function groundFlow(sx: number, sy: number, t: number) {
-  const dx = sx - 0.5;
-  const dy = sy - 0.5;
-  const r = Math.sqrt(dx * dx + dy * dy);
-  return Math.atan2(dy, dx) + Math.PI / 2 + 0.6 * Math.sin(r * 14 - t * 0.25);
+function groundFlow(sx: number, sy: number) {
+  return Math.atan2(sy - 0.5, sx - 0.5) + Math.PI / 2;
 }
 
 /**
@@ -84,9 +82,6 @@ class CellTable {
   readonly wdtF: Float32Array;
   readonly jx: Float32Array;
   readonly jy: Float32Array;
-  /** 숨결 sin(t·5 + cI + rI)을 각도 덧셈으로 풀기 위한 sin/cos(cI+rI) */
-  readonly bs: Float32Array;
-  readonly bc: Float32Array;
 
   constructor(
     readonly cols: number,
@@ -112,13 +107,6 @@ class CellTable {
         this.jy[i] = (hash(cI + 3, rI) - 0.5) * 0.5;
       }
     }
-    const kn = cols + rows + 3;
-    this.bs = new Float32Array(kn);
-    this.bc = new Float32Array(kn);
-    for (let k = 0; k < kn; k++) {
-      this.bs[k] = Math.sin(k - 2);
-      this.bc[k] = Math.cos(k - 2);
-    }
   }
 
   /** 이 표로 cols×rows 격자를 덮을 수 있나 (줄어드는 쪽은 다시 굽지 않는다) */
@@ -133,8 +121,8 @@ class CellTable {
 // 채널당 6비트로 양자화해 캐시를 유한하게 만들고(2^18칸) 같은 문자열 객체를
 // 돌려쓴다 — 브라우저의 파싱 캐시에도 그대로 얹힌다.
 //
-// 잃는 것은 채널당 최대 3/255(1.2%)인데, 이 렌더러는 셀마다 ±8%의 붓값과
-// ±4%의 숨결을 이미 곱하고 있어 눈에 닿지 않는다.
+// 잃는 것은 채널당 최대 3/255(1.2%)인데, 이 렌더러는 셀마다 ±8%의 붓값을
+// 이미 곱하고 있어 눈에 닿지 않는다.
 const CQ = 6;
 const CSHIFT = 8 - CQ;
 const colorTab = new Array<string>(1 << (CQ * 3));
@@ -277,9 +265,6 @@ export class FactureRenderer {
     }
     const { brush: tBrush, lenF: tLen, wdtF: tWdt, jx: tJx, jy: tJy } = tab;
     const tStride = tab.stride;
-    // 숨결은 sin(t·5 + k), k = cI + rI. 각도 덧셈으로 풀면 셀당 sin 한 번이 준다.
-    const bSin = Math.sin(PT * 5);
-    const bCos = Math.cos(PT * 5);
 
     // 원본 비율을 지켜 화면에 앉힌다 — 그림 밖은 바닥만 남는다.
     // 씬에 넘기는 비율도 화면이 아니라 그림 영역의 것이어야 한다.
@@ -321,14 +306,14 @@ export class FactureRenderer {
             rr = g[0];
             gg = g[1];
             bb = g[2];
-            a = groundFlow(sx, sy, PT);
+            a = groundFlow(sx, sy);
           }
         } else {
           const vx = (sx - pf.x) / pf.w;
           const vy = (sy - pf.y) / pf.h;
           const inPrev = vx >= 0 && vx <= 1 && vy >= 0 && vy <= 1;
           // 결은 작품과 무관하니 양쪽이 같다 — 색만 각자 구한다
-          const ga = inPrev && inCur ? 0 : groundFlow(sx, sy, PT);
+          const ga = inPrev && inCur ? 0 : groundFlow(sx, sy);
           let pr: number;
           let pg: number;
           let pb: number;
@@ -372,11 +357,9 @@ export class FactureRenderer {
             lerp(Math.cos(a0), Math.cos(a1), m),
           );
         }
-        // 임파스토: 셀별 붓값 + 밝은 셀 블룸 + 미세한 숨결
+        // 임파스토: 셀별 붓값 + 밝은 셀 블룸
         const lum = (rr * 0.3 + gg * 0.6 + bb * 0.1) / 255;
-        const k = cI + rI + 2;
-        let bright = tBrush[ti] * (1 + 0.5 * smooth(0.62, 1.0, lum));
-        bright *= 1 + 0.04 * (bSin * tab.bc[k] + bCos * tab.bs[k]);
+        const bright = tBrush[ti] * (1 + 0.5 * smooth(0.62, 1.0, lum));
         rr = clamp(rr * bright, 0, 255);
         gg = clamp(gg * bright, 0, 255);
         bb = clamp(bb * bright, 0, 255);

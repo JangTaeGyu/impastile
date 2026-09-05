@@ -62,7 +62,7 @@ export function factureSvg({
       let rr = c[0];
       let gg = c[1];
       let bb = c[2];
-      // 임파스토: 셀별 붓값 + 밝은 셀 블룸 (미동은 정지 이미지에서 생략)
+      // 임파스토: 셀별 붓값 + 밝은 셀 블룸 — renderer.ts와 같은 값이 나온다
       const lum = (rr * 0.3 + gg * 0.6 + bb * 0.1) / 255;
       const brush = 1 + (hash(cI, rI) - 0.5) * 0.16;
       const bright = brush * (1 + 0.5 * smooth(0.62, 1.0, lum));
