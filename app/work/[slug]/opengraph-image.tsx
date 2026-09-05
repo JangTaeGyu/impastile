@@ -10,6 +10,7 @@ import {
 } from "@/lib/ogCard";
 import copy from "@/lib/ogCopy.json";
 import { findWork, locatedWorks } from "@/lib/works";
+import { subLine } from "@/lib/site";
 
 // 작품 낱장의 공유 카드. 루트의 것(app/opengraph-image.tsx)과 규칙은 같고
 // 그리는 그림과 문구만 그 작품의 것이다 — '해바라기' 링크를 붙였는데 카드에
@@ -32,7 +33,7 @@ export async function generateImageMetadata({
       id: "card",
       size,
       contentType,
-      alt: `Impastile — ${w?.artist.ko}의 '${w?.entry.title}'을 방향성 임파스토 붓터치로 다시 그린 화면`,
+      alt: `Impastile — ${w?.artist.name}'s ${w?.entry.title} redrawn in directional impasto brushstrokes`,
     },
   ];
 }
@@ -107,7 +108,7 @@ export default async function Image({
               textShadow: SHADOW,
             }}
           >
-            {w.artist.ko}
+            {w.artist.name}
           </div>
           <div
             style={{
@@ -133,7 +134,7 @@ export default async function Image({
           >
             {/* satori는 자식이 둘 이상인 div에 display를 요구한다 —
                 조각내지 말고 한 문자열로 넘긴다 */}
-            {`${w.original} · ${w.year} · ${w.holder}`}
+            {subLine(w.entry.title, w.entry.sub)}
           </div>
         </div>
       </div>

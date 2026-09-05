@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import AboutDoc from "@/components/AboutDoc";
 import { aboutJsonLd, jsonLdScript } from "@/lib/jsonLd";
 
-const TITLE = "Facture — Impastile 그림 엔진";
+const TITLE = "Facture — the Impastile painting engine";
 const DESCRIPTION =
-  "Impastile이 반 고흐를 다시 그리는 방식. 그림 스타일을 이루는 세 가지 규칙과, 원화에서 붓결을 뽑아 화면에 올리는 Facture 엔진의 구조.";
+  "How Impastile redraws a painting: the three rules that make up its look, and the structure of Facture, the engine that pulls brush direction out of the original and puts it on screen.";
 
 export const metadata: Metadata = {
   title: TITLE,

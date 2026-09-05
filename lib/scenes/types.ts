@@ -1,8 +1,7 @@
 import type { WorkEntry } from "@/lib/facture/types";
 
 export interface Artist {
-  ko: string;
-  en: string;
+  name: string;
   era: string;
   movement: string;
 }

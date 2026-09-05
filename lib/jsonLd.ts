@@ -25,7 +25,7 @@ const WEBSITE_ID = `${SITE_URL}/#website`;
  * `paul-c-zanne`이 된다.
  */
 const personId = (artist: Artist) =>
-  `${SITE_URL}/#${artist.en
+  `${SITE_URL}/#${artist.name
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
@@ -34,8 +34,7 @@ const personId = (artist: Artist) =>
 const personNode = (a: Artist) => ({
   "@type": "Person",
   "@id": personId(a),
-  name: a.en,
-  alternateName: a.ko,
+  name: a.name,
   jobTitle: "Painter",
 });
 
@@ -45,7 +44,7 @@ const website = {
   url: SITE_URL,
   name: NAME,
   description: DESCRIPTION,
-  inLanguage: "ko-KR",
+  inLanguage: "en",
 };
 
 /** 작품 한 점. 목록(홈)과 낱장(/work/…)이 같은 모양을 쓴다 */
@@ -80,7 +79,7 @@ export function galleryJsonLd() {
         url: SITE_URL,
         name: TITLE,
         description: DESCRIPTION,
-        inLanguage: "ko-KR",
+        inLanguage: "en",
         isPartOf: { "@id": WEBSITE_ID },
         hasPart: locatedWorks.map(artworkNode),
       },
@@ -103,7 +102,7 @@ export function workJsonLd(w: Located, title: string, description: string) {
         url,
         name: title,
         description,
-        inLanguage: "ko-KR",
+        inLanguage: "en",
         isPartOf: { "@id": WEBSITE_ID },
         mainEntity: { "@id": `${url}#artwork` },
         breadcrumb: { "@id": `${url}#breadcrumb` },
@@ -134,7 +133,7 @@ export function aboutJsonLd(title: string, description: string) {
         url,
         name: title,
         description,
-        inLanguage: "ko-KR",
+        inLanguage: "en",
         isPartOf: { "@id": WEBSITE_ID },
         breadcrumb: { "@id": `${url}#breadcrumb` },
       },

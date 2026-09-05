@@ -27,15 +27,14 @@ export default function Home() {
         <h1>{TITLE}</h1>
         <p>{DESCRIPTION}</p>
         <p>
-          <Link href="/about">Facture — 그림 엔진이 어떻게 그리는지</Link>
+          <Link href="/about">Facture — how the engine draws</Link>
         </p>
         {exhibits.map((e, tab) => (
           <section key={e.name}>
             <h2>{e.name}</h2>
             {e.artist && (
               <p>
-                {e.artist.ko} ({e.artist.en}) · {e.artist.era} ·{" "}
-                {e.artist.movement}
+                {e.artist.name} · {e.artist.era} · {e.artist.movement}
               </p>
             )}
             <ul>

@@ -30,8 +30,9 @@ export const TITLE = "Impastile — Directional Impasto";
 const ARTIST_NAMES = exhibits.flatMap((e) => (e.artist ? [e.artist] : []));
 
 export const DESCRIPTION =
-  `${ARTIST_NAMES.map((a) => a.ko).join(" · ")}의 회화 ${COUNT}점을 원화가 ` +
-  "실제로 그어진 붓결 방향을 따라 임파스토 붓터치 하나하나로 다시 그리는 웹 갤러리";
+  `A web gallery that redraws ${COUNT} paintings by ` +
+  `${ARTIST_NAMES.map((a) => a.name).join(" · ")} one impasto stroke at a ` +
+  "time, following the brush direction of the originals";
 
 /**
  * 서치 콘솔 소유 확인 토큰 (URL 접두어 속성 https://impastile.jubrolab.dev/).
@@ -54,16 +55,15 @@ export const NAVER_VERIFICATION = process.env.NAVER_SITE_VERIFICATION;
  * 아직 읽는 자리라 작가 이름만이라도 한글·영문으로 함께 남겨둔다.
  */
 export const KEYWORDS = [
-  "임파스토",
-  "붓터치",
-  "명화 갤러리",
-  "인상주의",
-  "후기 인상주의",
-  "제너러티브 아트",
   "impasto",
   "brushstroke",
+  "impressionism",
+  "post-impressionism",
+  "expressionism",
   "generative art",
-  ...ARTIST_NAMES.flatMap((a) => [a.ko, a.en]),
+  "painting gallery",
+  "canvas rendering",
+  ...ARTIST_NAMES.map((a) => a.name),
 ];
 
 /**
@@ -73,4 +73,15 @@ export const KEYWORDS = [
 export function splitSub(sub: string) {
   const [original = "", year = "", holder = ""] = sub.split(" · ");
   return { original, year, holder };
+}
+
+/**
+ * 화면에 보일 부제. 제목과 원제가 같으면 원제를 뺀다 — 영어 제목은 원제와
+ * 겹치는 작품이 많아 그대로 두면 같은 말이 두 줄 연달아 나온다.
+ * `sub` 자체는 건드리지 않는다. 작품 주소가 그 첫 칸에서 나온다.
+ */
+export function subLine(title: string, sub: string) {
+  const { original, year, holder } = splitSub(sub);
+  const rest = [year, holder].filter(Boolean).join(" · ");
+  return original && original !== title ? `${original} · ${rest}` : rest;
 }

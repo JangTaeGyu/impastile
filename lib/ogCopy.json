@@ -1,6 +1,6 @@
 {
   "wordmark": ["IMPAS", "TILE"],
-  "kicker": "반 고흐 · 모네 · 뭉크 · 세잔",
-  "title": "방향성 임파스토 붓터치",
-  "desc": "원화가 실제로 그어진 결을 따라 {count}점의 회화를 하나하나 다시 그린다."
+  "kicker": "Van Gogh · Monet · Munch · Cézanne",
+  "title": "Directional Impasto Brushwork",
+  "desc": "{count} paintings redrawn one stroke at a time, following the grain the painters actually laid down."
 }

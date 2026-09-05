@@ -64,16 +64,16 @@ export default function Actions({
   const onCopy = useCallback(async () => {
     say(
       (await copyText(linkOf()))
-        ? "링크를 복사했습니다"
-        : "링크를 복사하지 못했습니다",
+        ? "Link copied"
+        : "Couldn't copy the link",
     );
   }, [say, linkOf]);
 
   const onShare = useCallback(async () => {
     const url = linkOf();
     const text = title
-      ? `${title} — 원화의 붓결을 따라 다시 그린 회화`
-      : "원화의 붓결을 따라 다시 그린 회화";
+      ? `${title} — redrawn along the brushwork of the original`
+      : "Paintings redrawn along the brushwork of the originals";
     if (navigator.share) {
       try {
         // 공유 시트는 사용자 제스처 안에서만 열린다 — 먼저 부르고 실패하면 복사로 내린다
@@ -86,31 +86,31 @@ export default function Actions({
     }
     say(
       (await copyText(url))
-        ? "공유 창이 없어 링크를 복사했습니다"
-        : "공유하지 못했습니다",
+        ? "No share sheet here — link copied instead"
+        : "Couldn't share",
     );
   }, [say, title, linkOf]);
 
   return (
     <div className="actions">
-      <Link className="icon" href="/about" title="Facture — 그림 엔진 이야기">
+      <Link className="icon" href="/about" title="Facture — the engine behind the picture">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden>
           <circle cx="12" cy="12" r="9" />
           <path d="M12 11.2v5.2" />
           <path d="M12 7.6h.01" />
         </svg>
-        <span className="sr">Facture 소개</span>
+        <span className="sr">About Facture</span>
       </Link>
 
-      <button className="icon" onClick={onCopy} title="링크 복사">
+      <button className="icon" onClick={onCopy} title="Copy link">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden>
           <path d="M10.6 13.4a3.9 3.9 0 0 0 5.5 0l2.6-2.6a3.9 3.9 0 0 0-5.5-5.5l-1.5 1.5" />
           <path d="M13.4 10.6a3.9 3.9 0 0 0-5.5 0l-2.6 2.6a3.9 3.9 0 0 0 5.5 5.5l1.5-1.5" />
         </svg>
-        <span className="sr">링크 복사</span>
+        <span className="sr">Copy link</span>
       </button>
 
-      <button className="icon" onClick={onShare} title="공유하기">
+      <button className="icon" onClick={onShare} title="Share">
         <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden>
           <circle cx="17.6" cy="5.6" r="2.5" />
           <circle cx="6.4" cy="12" r="2.5" />
@@ -118,7 +118,7 @@ export default function Actions({
           <path d="M8.6 10.7 15.4 6.9" />
           <path d="M8.6 13.3l6.8 3.8" />
         </svg>
-        <span className="sr">공유하기</span>
+        <span className="sr">Share</span>
       </button>
 
       {note && <span className="actions-note">{note}</span>}

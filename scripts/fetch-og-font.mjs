@@ -10,6 +10,7 @@
 //
 //   lib/ogCopy.json      루트 카드의 문구
 //   lib/scenes/index.ts  작품 낱장 카드에 실리는 제목·원제·소장처·작가 이름
+//                        (title / sub / name — 키 이름을 고치면 아래 pick도 고친다)
 //
 // 둘 중 하나라도 고치면 다시 돌린다 — 빠뜨리면 새 글자가 카드에서 두부로 나온다.
 // 결과물은 커밋해서 빌드가 네트워크 없이도 되게 한다.
@@ -51,7 +52,7 @@ const pick = (key, least) => {
   }
   return found.map((m) => m[1]).join("");
 };
-const fromScenes = pick("title", 42) + pick("sub", 42) + pick("ko", 4);
+const fromScenes = pick("title", 42) + pick("sub", 42) + pick("name", 4);
 
 // {count} 자리에 어떤 숫자가 오든 렌더되도록 0–9는 항상 포함한다
 const chars = [...new Set(flatten(copy) + fromScenes + "0123456789")]

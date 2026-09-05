@@ -8,6 +8,7 @@ import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
 import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
 import { entryFromFile } from "@/lib/scenes/fromFile";
 import { locatedWorks, workPath } from "@/lib/works";
+import { subLine } from "@/lib/site";
 import { THUMB_H, thumbSrc, thumbWidth } from "@/lib/facture/thumb";
 import type { Work, WorkEntry } from "@/lib/facture/types";
 
@@ -109,7 +110,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
         }, FADE_MS);
       })
       .catch(() => {
-        if (seqRef.current === seq) say("작품을 불러오지 못했습니다");
+        if (seqRef.current === seq) say("Couldn't load that painting");
       });
   }, [say]);
 
@@ -156,7 +157,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
         f.type.startsWith("image/"),
       );
       if (!files.length) {
-        if (list && Array.from(list).length) say("이미지 파일이 아닙니다");
+        if (list && Array.from(list).length) say("That isn't an image file");
         return;
       }
       setBusy(true);
@@ -174,8 +175,8 @@ export default function Gallery({ start }: { start?: Start } = {}) {
       if (failed) {
         say(
           added.length
-            ? `${failed}장은 읽지 못했습니다`
-            : "이미지를 읽지 못했습니다",
+            ? `${failed} of them couldn't be read`
+            : "Couldn't read that image",
         );
       }
       if (!added.length) return;
@@ -287,15 +288,16 @@ export default function Gallery({ start }: { start?: Start } = {}) {
           {shown && (
             <div className={`fade${fading ? " out" : ""}`}>
               <div className="kicker">
-                {shown.work.uploaded ? MY_EXHIBIT : shown.work.sub}
+                {shown.work.uploaded
+                  ? MY_EXHIBIT
+                  : subLine(shown.work.title, shown.work.sub)}
               </div>
               <h1>{shown.work.title}</h1>
               {artist && !shown.work.uploaded && (
                 <>
                   <p className="desc">{shown.work.desc}</p>
                   <div className="meta">
-                    <b>{artist.ko}</b> · {artist.en} · {artist.era} ·{" "}
-                    {artist.movement}
+                    <b>{artist.name}</b> · {artist.era} · {artist.movement}
                   </div>
                 </>
               )}
@@ -313,7 +315,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
               className={`tab${i === tab ? " on" : ""}`}
               onClick={() => selectTab(i)}
               disabled={!t.count}
-              title={t.count ? `${t.count}점` : "아직 비어 있습니다"}
+              title={t.count ? `${t.count} works` : "Empty for now"}
               aria-current={i === tab}
             >
               {t.name}
@@ -324,7 +326,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
         <div className="rail-row">
           <div className="rail-track" ref={trackRef}>
             {works.length === 0 && (
-              <span className="rail-empty">이미지를 올리면 여기에 담깁니다</span>
+              <span className="rail-empty">Add an image and it lands here</span>
             )}
             {works.map((e, i) => {
               const w = loadedWork(e);
@@ -376,22 +378,22 @@ export default function Gallery({ start }: { start?: Start } = {}) {
               className="arrow"
               onClick={() => fileRef.current?.click()}
               disabled={busy}
-              title="내 이미지 올리기 — 끌어다 놓거나 붙여넣어도 됩니다"
-              aria-label="내 이미지 올리기"
+              title="Add your own image — dragging or pasting works too"
+              aria-label="Add your own image"
             >
               {busy ? "…" : "+"}
             </button>
             <button
               className="arrow"
               onClick={() => go(idx - 1)}
-              aria-label="이전 작품"
+              aria-label="Previous work"
             >
               ‹
             </button>
             <button
               className="arrow"
               onClick={() => go(idx + 1)}
-              aria-label="다음 작품"
+              aria-label="Next work"
             >
               ›
             </button>
@@ -401,7 +403,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
 
       {dragging && (
         <div className="dropzone">
-          <span>놓으면 붓터치로 다시 그립니다</span>
+          <span>Drop it and the brush takes over</span>
         </div>
       )}
     </>

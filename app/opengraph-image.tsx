@@ -12,7 +12,7 @@ import copy from "@/lib/ogCopy.json";
 import { baseWorks, exhibits } from "@/lib/scenes";
 
 export const alt =
-  "Impastile — 반 고흐 '별이 빛나는 밤에'를 방향성 임파스토 붓터치로 다시 그린 화면";
+  "Impastile — Van Gogh's The Starry Night redrawn in directional impasto brushstrokes";
 export { contentType, size };
 
 // 앱과 같은 렌더링 규칙으로 '별이 빛나는 밤에'를 한 장 굽는다.

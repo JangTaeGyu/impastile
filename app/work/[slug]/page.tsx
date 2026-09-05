@@ -5,6 +5,7 @@ import Gallery from "@/components/Gallery";
 import { jsonLdScript, workJsonLd } from "@/lib/jsonLd";
 import { COUNT } from "@/lib/site";
 import { type Located, findWork, locatedWorks, workPath } from "@/lib/works";
+import { subLine } from "@/lib/site";
 
 /**
  * 작품 한 점의 주소. 화면은 갤러리 그대로이고 그 작품에서 시작할 뿐이지만,
@@ -19,11 +20,12 @@ export function generateStaticParams() {
 // 목록에 없는 슬러그는 404다. 작품은 빌드 때 다 아는 값이라 열어둘 이유가 없다.
 export const dynamicParams = false;
 
-const titleOf = (w: Located) => `${w.entry.title} — ${w.original} · ${w.artist.ko}`;
+const titleOf = (w: Located) =>
+  `${w.entry.title} — ${w.artist.name}, ${w.year}`;
 
 const descOf = (w: Located) =>
-  `${w.artist.ko}, ${w.original}(${w.year}, ${w.holder}). ${w.entry.desc} ` +
-  "원화가 실제로 그어진 붓결 방향을 따라 임파스토 붓터치 하나하나로 다시 그렸다.";
+  `${w.artist.name}, ${w.original} (${w.year}, ${w.holder}). ${w.entry.desc} ` +
+  "Redrawn here one impasto stroke at a time, following the brush direction of the original.";
 
 export async function generateMetadata({
   params,
@@ -63,20 +65,18 @@ export default async function Work({ params }: PageProps<"/work/[slug]">) {
       */}
       <section className="sr">
         <h1>{titleOf(w)}</h1>
-        <p>
-          {w.original} · {w.year} · {w.holder}
-        </p>
+        <p>{subLine(w.entry.title, w.entry.sub)}</p>
         <p>{w.entry.desc}</p>
         <p>
-          {w.artist.ko} ({w.artist.en}) · {w.artist.era} · {w.artist.movement}
+          {w.artist.name} · {w.artist.era} · {w.artist.movement}
         </p>
         <p>
-          Impastile은 원화가 실제로 그어진 붓결 방향을 따라 이 그림을 임파스토
-          붓터치 하나하나로 다시 그린다.{" "}
-          <Link href="/about">그림 엔진 Facture가 어떻게 그리는지</Link> 읽거나,{" "}
-          <Link href="/">전체 {COUNT}점</Link>을 볼 수 있다.
+          Impastile redraws this painting one impasto stroke at a time,
+          following the brush direction of the original. Read{" "}
+          <Link href="/about">how the Facture engine draws</Link>, or see{" "}
+          <Link href="/">all {COUNT} paintings</Link>.
         </p>
-        <h2>{w.exhibit}의 다른 작품</h2>
+        <h2>Other works in the {w.exhibit}</h2>
         <ul>
           {locatedWorks
             .filter((o) => o.tab === w.tab && o.slug !== w.slug)

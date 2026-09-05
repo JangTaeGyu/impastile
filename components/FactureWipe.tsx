@@ -33,8 +33,8 @@ export default function FactureWipe({
         <FactureCanvas work={flat} className={s.wipeCanvas} still={still} />
       </div>
 
-      <span className={`${s.tag} ${s.tagL}`}>격자 — 방향 없음</span>
-      <span className={`${s.tag} ${s.tagR}`}>붓결 — 원화의 방향장</span>
+      <span className={`${s.tag} ${s.tagL}`}>Grid — no direction</span>
+      <span className={`${s.tag} ${s.tagR}`}>Grain — the original’s field</span>
 
       <input
         className={s.wipeRange}
@@ -43,8 +43,8 @@ export default function FactureWipe({
         max={100}
         value={x}
         onChange={(e) => setX(+e.target.value)}
-        aria-label="붓결이 드러나는 지점"
-        aria-valuetext={`왼쪽에서 ${x}%`}
+        aria-label="Where the brush direction shows through"
+        aria-valuetext={`${x}% from the left`}
       />
       <div className={s.seam} style={{ left: `${x}%` }}>
         <span className={s.seamDot}>‹ ›</span>

@@ -26,7 +26,7 @@ export async function entryFromFile(file: File): Promise<WorkEntry> {
   const { sat, gain } = autoTone(data);
   const parts = paintingWork(data, sat, gain);
   return {
-    title: displayName(file.name) || "이미지",
+    title: displayName(file.name) || "Image",
     sub: "",
     desc: "",
     cell: CELL,
