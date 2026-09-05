@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Logo from "./Logo";
 import Actions from "./Actions";
 import FactureCanvas from "./FactureCanvas";
+import { useReducedMotion } from "./useReducedMotion";
 import { MY_EXHIBIT, exhibits } from "@/lib/scenes";
 import { loadWork, loadedWork, preloadWorks } from "@/lib/scenes/load";
 import { entryFromFile } from "@/lib/scenes/fromFile";
@@ -29,6 +30,9 @@ export interface Start {
 }
 
 export default function Gallery({ start }: { start?: Start } = {}) {
+  // 움직임을 줄여 달라고 해 두었으면 붓질도, 크로스페이드도, 7초 자동 넘김도
+  // 걷는다. 그림은 그대로 보이고 넘기는 것만 손으로 하게 된다.
+  const still = useReducedMotion();
   const [mine, setMine] = useState<WorkEntry[]>([]); // 나의 전시관
   const [tab, setTab] = useState(start?.tab ?? 0);
   // 띠에서 고른 자리 — 데이터를 기다리지 않는다
@@ -47,6 +51,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
   const [, bumpLoaded] = useState(0);
 
   const idxRef = useRef(idx);
+  const stillRef = useRef(still);
   // 콜백이 매번 다시 만들어지지 않도록 최신 값을 ref로도 들고 있는다
   const tabRef = useRef(start?.tab ?? 0);
   const mineRef = useRef<WorkEntry[]>([]);
@@ -65,15 +70,19 @@ export default function Gallery({ start }: { start?: Start } = {}) {
     idxRef.current = idx;
   }, [idx]);
 
+  useEffect(() => {
+    stillRef.current = still;
+  }, [still]);
+
   // 선택이 넘어가면 띠도 따라 굴러간다 (block:nearest — 세로로는 안 움직인다)
   useEffect(() => {
     const el = trackRef.current?.children[idx];
     el?.scrollIntoView({
-      behavior: "smooth",
+      behavior: still ? "auto" : "smooth",
       inline: "center",
       block: "nearest",
     });
-  }, [idx]);
+  }, [idx, still]);
 
   const say = useCallback((msg: string) => {
     setNotice(msg);
@@ -101,11 +110,18 @@ export default function Gallery({ start }: { start?: Start } = {}) {
       .then((w) => {
         if (seqRef.current !== seq) return; // 그 사이 다른 작품을 골랐다
         setCur(w);
-        setFading(true);
+        const at = locatedWorks.find((o) => o.tab === t && o.idx === n);
+        const next = { work: w, tab: t, path: at && workPath(at.slug) };
         window.clearTimeout(fadeTimer.current);
+        // 정지 모드에서는 흐려졌다 돌아오는 동안이 없다 — 글자를 바로 바꾼다
+        if (stillRef.current) {
+          setFading(false);
+          setShown(next);
+          return;
+        }
+        setFading(true);
         fadeTimer.current = window.setTimeout(() => {
-          const at = locatedWorks.find((o) => o.tab === t && o.idx === n);
-          setShown({ work: w, tab: t, path: at && workPath(at.slug) });
+          setShown(next);
           setFading(false);
         }, FADE_MS);
       })
@@ -191,13 +207,17 @@ export default function Gallery({ start }: { start?: Start } = {}) {
     [go, say],
   );
 
-  // 7초 자동 슬라이드 — 사용자 입력 시 타이머 리셋
+  // 7초 자동 슬라이드 — 사용자 입력 시 타이머 리셋.
+  // 스스로 넘어가는 화면은 움직임을 줄이는 쪽에서 가장 곤란한 것이라 아예 걸지
+  // 않는다. 그때는 화살표·띠·키보드로만 넘어간다.
   useEffect(() => {
-    let auto = window.setInterval(() => go(idxRef.current + 1), AUTO_MS);
-    const reset = () => {
+    let auto = 0;
+    const arm = () => {
       window.clearInterval(auto);
-      auto = window.setInterval(() => go(idxRef.current + 1), AUTO_MS);
+      if (!still) auto = window.setInterval(() => go(idxRef.current + 1), AUTO_MS);
     };
+    arm();
+    const reset = arm;
     resetAuto.current = reset;
     addEventListener("mousedown", reset);
     addEventListener("keydown", reset);
@@ -208,7 +228,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
       removeEventListener("mousedown", reset);
       removeEventListener("keydown", reset);
     };
-  }, [go]);
+  }, [go, still]);
 
   // ←/→ 키보드 네비게이션
   useEffect(() => {
@@ -275,7 +295,7 @@ export default function Gallery({ start }: { start?: Start } = {}) {
 
   return (
     <>
-      {cur && <FactureCanvas work={cur} />}
+      {cur && <FactureCanvas work={cur} still={still} />}
       <div className="grain" />
       <div className="scrim" />
 

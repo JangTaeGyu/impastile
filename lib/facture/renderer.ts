@@ -228,6 +228,22 @@ export class FactureRenderer {
     this.draw();
   };
 
+  /**
+   * 크로스페이드 없이 새 작품을 한 장 그린다.
+   *
+   * 움직임을 줄여 달라고 해 둔 사람에게는 rAF 루프를 아예 돌리지 않는데,
+   * 그러면 작품을 바꿔도 다음 프레임이 오지 않아 화면이 첫 작품에 얼어붙는다.
+   * 여기서 상태를 새 작품으로 갈아끼우고 그 자리에서 한 장 그린다.
+   */
+  snapTo(work: Work) {
+    this.prevScene = this.curScene = work.scene;
+    this.prevFlow = this.curFlow = work.flow ?? DEFAULT_FLOW;
+    this.prevAspect = this.curAspect = work.aspect;
+    this.cell = this.targetCell = work.cell;
+    this.mixT = 1;
+    this.draw();
+  }
+
   /** 새 작품으로 크로스페이드 전환 */
   transitionTo(work: Work) {
     this.prevScene = this.curScene;

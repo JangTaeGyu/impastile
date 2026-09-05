@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import FactureWipe from "./FactureWipe";
 import FlowTicks from "./FlowTicks";
 import Logo from "./Logo";
+import { useReducedMotion } from "./useReducedMotion";
 import { baseWorks } from "@/lib/scenes";
 import { loadWork } from "@/lib/scenes/load";
 import type { Work } from "@/lib/facture/types";
@@ -16,21 +17,6 @@ import s from "./about.module.css";
 // 배각 벡터로 섞으면 0°를 지나며 거의 눕지 않는다.
 const NAIVE = [10, 50, 90, 130, 170];
 const DOUBLED = [10, 5.2, 0, -5.2, -10];
-
-const REDUCED = "(prefers-reduced-motion: reduce)";
-
-/** 미디어 쿼리는 바깥의 상태다 — 구독해서 읽는다 (서버에는 창이 없어 false) */
-function useReducedMotion() {
-  return useSyncExternalStore(
-    (onChange) => {
-      const mq = matchMedia(REDUCED);
-      mq.addEventListener("change", onChange);
-      return () => mq.removeEventListener("change", onChange);
-    },
-    () => matchMedia(REDUCED).matches,
-    () => false,
-  );
-}
 
 export default function AboutDoc() {
   const [work, setWork] = useState<Work | null>(null);

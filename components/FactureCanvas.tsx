@@ -61,10 +61,15 @@ export default function FactureCanvas({
     };
   }, [still]);
 
-  // 작품이 바뀌면 크로스페이드 전환 (같은 씬으로의 전환은 시각적으로 무해)
+  // 작품이 바뀌면 크로스페이드 전환 (같은 씬으로의 전환은 시각적으로 무해).
+  // 정지 모드에서는 루프가 돌지 않으므로 전환을 걸어도 그려줄 프레임이 없다 —
+  // 그 자리에서 한 장 갈아 그린다.
   useEffect(() => {
-    rendererRef.current?.transitionTo(work);
-  }, [work]);
+    const rd = rendererRef.current;
+    if (!rd) return;
+    if (still) rd.snapTo(work);
+    else rd.transitionTo(work);
+  }, [work, still]);
 
   return <canvas ref={cvRef} className={className} aria-hidden />;
 }
