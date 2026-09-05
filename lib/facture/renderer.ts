@@ -1,5 +1,5 @@
 import { fitRect } from "./fit";
-import { clamp, hash, lerp, smooth } from "./math";
+import { clamp, frac, hash, lerp, smooth } from "./math";
 import type { FlowFn, Scene, Work } from "./types";
 
 const BG_R = 10;
@@ -27,6 +27,30 @@ const MIN_DT = 1 / FPS_CAP - 0.004;
 // 방향장이 없는 씬의 기본 흐름 — 완만하게 굽이치는 수평 붓결
 export const DEFAULT_FLOW: FlowFn = (nx, ny) =>
   0.35 * Math.sin(nx * 5 + ny * 3) + 0.2 * Math.sin(ny * 9 - nx * 4);
+
+// ── 붓 자국을 타고 지나가는 빛 ─────────────────────────────────────────────
+// 물감이 솟은 릿지를 스트로크 길이의 일부만 밝히고, 그 밝은 마디를 스트로크의
+// **제 축을 따라** 꼬리에서 머리로 흘려보낸다. 붓 자국 하나하나에서 빛이
+// 그어진 방향으로 지나간다.
+//
+// 앞서 두 가지를 시도했다가 접었다. 둘 다 이동량이 실측 0이었다.
+//
+// 1. 그림 자체를 결을 따라 미는 방법. 상태 없는 주기 함수는 제자리로 돌아와야
+//    하므로 끝없이 흐를 수 없고, 반 주기 어긋난 두 벌을 겹치는 방식은 가중
+//    중심 w0·o0 + w1·o1이 위상과 무관하게 0이라 아예 나아가지 않았다.
+// 2. 결 방향으로 흐르는 띠. 위상을 `자리 · 방향`으로 잡으면 방향이 자리마다
+//    달라 그 스칼라장의 기울기가 붓결이 아니라 각도의 변화율에 지배된다.
+//    무늬가 제자리에서 명멸할 뿐 흘러가지 않았다. 방향장은 앞뒤가 없는 선장이라
+//    '결을 따라 잰 거리'가 전역적으로 존재하지 않는다.
+//
+// 스트로크 안에서는 그 문제가 없다. 축이 하나뿐이라 위상이 명확하고, 마디가
+// 머리에 닿을 때 밝기가 0이 되므로 꼬리로 돌아가는 순간이 보이지 않는다.
+/** 밝은 마디의 길이 (스트로크 길이 대비) */
+const GLINT_SPAN = 0.38;
+/** 한 스트로크를 지나는 데 걸리는 시간의 역수 (Hz) */
+const GLINT_RATE = 0.7;
+/** 마디가 한복판을 지날 때의 릿지 세기 (1이면 예전 릿지와 같다) */
+const GLINT_GAIN = 1.9;
 
 // 비율을 지켜 앉히면 그림 옆에 여백이 남는다. 비워두면 화면이 끊겨 보여서
 // 바탕도 붓으로 칠한다.
@@ -83,6 +107,8 @@ class CellTable {
   readonly wdtF: Float32Array;
   readonly jx: Float32Array;
   readonly jy: Float32Array;
+  /** 빛의 마디가 스트로크 위에서 출발하는 자리 (0..1) */
+  readonly ph: Float32Array;
 
   constructor(
     readonly cols: number,
@@ -97,6 +123,7 @@ class CellTable {
     this.wdtF = new Float32Array(n);
     this.jx = new Float32Array(n);
     this.jy = new Float32Array(n);
+    this.ph = new Float32Array(n);
     for (let rI = -1; rI <= rows; rI++) {
       const row = (rI + 1) * stride;
       for (let cI = -1; cI <= cols; cI++) {
@@ -106,6 +133,7 @@ class CellTable {
         this.wdtF[i] = 0.5 + hash(cI + 5, rI) * 0.26;
         this.jx[i] = (hash(cI, rI + 7) - 0.5) * 0.5;
         this.jy[i] = (hash(cI + 3, rI) - 0.5) * 0.5;
+        this.ph[i] = hash(cI + 11, rI + 5);
       }
     }
   }
@@ -264,7 +292,14 @@ export class FactureRenderer {
     if (!tab || !tab.covers(cols, rows)) {
       tab = this.tab = new CellTable(cols + 8, rows + 8);
     }
-    const { brush: tBrush, lenF: tLen, wdtF: tWdt, jx: tJx, jy: tJy } = tab;
+    const {
+      brush: tBrush,
+      lenF: tLen,
+      wdtF: tWdt,
+      jx: tJx,
+      jy: tJy,
+      ph: tPh,
+    } = tab;
     const tStride = tab.stride;
 
     // 원본 비율을 지켜 화면에 앉힌다 — 그림 밖은 바닥만 남는다.
@@ -383,11 +418,21 @@ export class FactureRenderer {
         ctx.fillRect(-len / 2, -wdt / 2, len, wdt);
         // 물감이 솟은 릿지 — 어두운 셀에서는 보이지 않으므로 생략 (드로우 절감)
         if (lum > 0.1) {
-          const hr = clamp(rr * 1.18 + 14, 0, 255) | 0;
-          const hg = clamp(gg * 1.18 + 14, 0, 255) | 0;
-          const hb = clamp(bb * 1.14 + 10, 0, 255) | 0;
-          ctx.fillStyle = css(hr, hg, hb);
-          ctx.fillRect(-len / 2 + len * 0.08, -wdt / 2, len * 0.84, wdt * 0.3);
+          // 밝은 마디가 꼬리에서 머리로 간다. 셀마다 출발 위상이 달라
+          // 이웃이 한꺼번에 번쩍이지 않는다.
+          const ph = frac(PT * GLINT_RATE + tPh[ti]);
+          // 양끝에서 0이 되어 스트로크 색과 같아진다 — 마디가 머리에 닿을 때
+          // 사라지므로 꼬리로 돌아가는 순간이 보이지 않는다. g=1이 예전 릿지다.
+          const g = GLINT_GAIN * Math.sin(Math.PI * ph);
+          // 스트로크 색과 구분되지 않는 마디는 그릴 이유가 없다 (드로우 절감)
+          if (g > 0.08) {
+            const rl = len * GLINT_SPAN;
+            const hr = clamp(rr * (1 + 0.18 * g) + 14 * g, 0, 255) | 0;
+            const hg = clamp(gg * (1 + 0.18 * g) + 14 * g, 0, 255) | 0;
+            const hb = clamp(bb * (1 + 0.14 * g) + 10 * g, 0, 255) | 0;
+            ctx.fillStyle = css(hr, hg, hb);
+            ctx.fillRect(-len / 2 + ph * (len - rl), -wdt / 2, rl, wdt * 0.3);
+          }
         }
       }
     }
